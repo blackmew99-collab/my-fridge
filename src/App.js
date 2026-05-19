@@ -572,7 +572,11 @@ export default function FridgeApp() {
   const [roomInput, setRoomInput] = useState("");
   const [showRoomSetup, setShowRoomSetup] = useState(false);
   const lastFirebaseItems = useRef(null);
+  const currentItemsRef = useRef(items);
   const isShared = !!(roomCode && db);
+
+  // currentItemsRef를 항상 최신 items로 유지
+  useEffect(() => { currentItemsRef.current = items; }, [items]);
 
   // localStorage 또는 Firebase 저장
   useEffect(() => {
@@ -589,12 +593,21 @@ export default function FridgeApp() {
   // Firebase 실시간 리스너
   useEffect(() => {
     if (!isShared) return;
-    const itemsRef = ref(db, `fridges/${roomCode}/items`);
-    const unsubscribe = onValue(itemsRef, (snapshot) => {
+    let isFirst = true;
+    const itemsPath = ref(db, `fridges/${roomCode}/items`);
+    const unsubscribe = onValue(itemsPath, (snapshot) => {
       const data = snapshot.val();
-      const newItems = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
-      lastFirebaseItems.current = JSON.stringify(newItems);
-      setItems(newItems);
+      if (data === null && isFirst) {
+        // 빈 방에 처음 접속 → 내 현재 아이템을 Firebase에 올림
+        const toUpload = currentItemsRef.current;
+        lastFirebaseItems.current = JSON.stringify(toUpload);
+        set(itemsPath, toUpload);
+      } else {
+        const newItems = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
+        lastFirebaseItems.current = JSON.stringify(newItems);
+        setItems(newItems);
+      }
+      isFirst = false;
     });
     return unsubscribe;
   }, [roomCode, isShared]);
