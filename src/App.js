@@ -7,15 +7,28 @@ import { getDatabase, ref, onValue, set } from "firebase/database";
 // ── Firebase 설정 ────────────────────────────────────────────────────────────
 // Firebase 콘솔(https://console.firebase.google.com)에서 프로젝트 생성 후
 // 아래 값을 채워주세요. 비어 있으면 공유 기능 없이 개인 모드로만 작동해요.
-const FIREBASE_CONFIG = {
-  apiKey: "",
-  authDomain: "",
-  databaseURL: "",        // 예: https://my-fridge-xxxx-default-rtdb.firebaseio.com
-  projectId: "",
-  storageBucket: "",
-  messagingSenderId: "",
-  appId: ""
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyC82-Ui87SNyqEdV0SbLdMEOgyUUZ_77wE",
+  authDomain: "my-fridge-6183a.firebaseapp.com",
+  databaseURL: "https://my-fridge-6183a-default-rtdb.firebaseio.com",
+  projectId: "my-fridge-6183a",
+  storageBucket: "my-fridge-6183a.firebasestorage.app",
+  messagingSenderId: "896513222530",
+  appId: "1:896513222530:web:c6c364a53c8027bda3519b",
+  measurementId: "G-PFQDGDWMBK"
 };
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 
 const isFirebaseReady = !!(FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.databaseURL);
 let db = null;
