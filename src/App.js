@@ -571,53 +571,46 @@ export default function FridgeApp() {
   const [roomCode, setRoomCode] = useState(() => localStorage.getItem("fridge_room") || "");
   const [roomInput, setRoomInput] = useState("");
   const [showRoomSetup, setShowRoomSetup] = useState(false);
-  const lastFirebaseItems = useRef(null);
   const currentItemsRef = useRef(items);
-  const hasInitializedRef = useRef(false); // Firebase 첫 응답 전까지 쓰기 차단
+  const isSharedRef = useRef(!!(localStorage.getItem("fridge_room") && db));
+  const roomCodeRef = useRef(localStorage.getItem("fridge_room") || "");
   const isShared = !!(roomCode && db);
 
-  // currentItemsRef를 항상 최신 items로 유지
+  // refs 최신값 유지
   useEffect(() => { currentItemsRef.current = items; }, [items]);
+  useEffect(() => { isSharedRef.current = isShared; roomCodeRef.current = roomCode; }, [isShared, roomCode]);
 
-  // localStorage 또는 Firebase 저장
+  // items 변경 시 localStorage 항상 동기화 (공유 모드에서도 로컬 백업)
   useEffect(() => {
-    const json = JSON.stringify(items);
-    if (isShared) {
-      // Firebase 첫 응답 전에는 절대 쓰지 않음 (기존 데이터 보호)
-      if (!hasInitializedRef.current) return;
-      if (json !== lastFirebaseItems.current) {
-        set(ref(db, `fridges/${roomCode}/items`), items);
-      }
-    } else {
-      localStorage.setItem("fridge_items", json);
-    }
+    localStorage.setItem("fridge_items", JSON.stringify(items));
   }, [items]);
 
-  // Firebase 실시간 리스너
+  // 재료 저장 함수 — 공유 모드일 때만 Firebase에 직접 씀, 아닐 땐 setItems만
+  const persistItems = useCallback((newItems) => {
+    setItems(newItems);
+    if (isSharedRef.current) {
+      set(ref(db, `fridges/${roomCodeRef.current}/items`), newItems);
+    }
+  }, []);
+
+  // Firebase 실시간 리스너 — 읽기 전용, 절대 쓰지 않음
   useEffect(() => {
     if (!isShared) return;
-    hasInitializedRef.current = false; // 방이 바뀌면 초기화 플래그 리셋
     let isFirst = true;
     const itemsPath = ref(db, `fridges/${roomCode}/items`);
     const unsubscribe = onValue(itemsPath, (snapshot) => {
       const data = snapshot.val();
-      if (data === null && isFirst) {
-        // 빈 방에 처음 접속 → 내 현재 아이템을 Firebase에 올림
+      if (isFirst && data === null) {
+        // 빈 방 → 내 현재 아이템 올리기 (이때만 예외적으로 씀)
         const toUpload = currentItemsRef.current;
-        lastFirebaseItems.current = JSON.stringify(toUpload);
-        set(itemsPath, toUpload);
+        if (toUpload.length > 0) set(itemsPath, toUpload);
       } else {
         const newItems = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
-        lastFirebaseItems.current = JSON.stringify(newItems);
-        setItems(newItems);
+        setItems(newItems); // persistItems 아닌 setItems 직접 호출 (Firebase 에코 방지)
       }
-      hasInitializedRef.current = true; // 이제부터 쓰기 허용
       isFirst = false;
     });
-    return () => {
-      unsubscribe();
-      hasInitializedRef.current = false;
-    };
+    return unsubscribe;
   }, [roomCode, isShared]);
 
   const joinRoom = () => {
@@ -631,12 +624,10 @@ export default function FridgeApp() {
   };
 
   const leaveRoom = () => {
+    isSharedRef.current = false; // 즉시 비공유 모드로 전환
     localStorage.removeItem("fridge_room");
     setRoomCode("");
     setShowRoomSetup(false);
-    lastFirebaseItems.current = null;
-    const localItems = JSON.parse(localStorage.getItem("fridge_items") || "[]");
-    setItems(localItems);
     showToast("👋 개인 모드로 전환됐어요");
   };
 
@@ -758,16 +749,16 @@ export default function FridgeApp() {
   const requestShelfLifeForm = useCallback(async () => {
     if (!form.name.trim()) { showToast("❗ 재료명을 먼저 입력해주세요"); return; }
     const newItem = { id:Date.now(), ...form, name:form.name.trim() };
-    setItems(prev => [newItem, ...prev]);
+    persistItems([newItem, ...currentItemsRef.current]);
     setForm(p => ({ name:"", qty:"", unit:"g", category:p.category, expiry:"" }));
     await openShelfPopup(newItem.id, newItem.name, newItem.category, true);
-  }, [form, openShelfPopup]);
+  }, [form, openShelfPopup, persistItems]);
 
   const applyShelfLife = () => {
     if (!shelfPopup || shelfPopup.selectedOption===null) return;
     const opt = shelfPopup.options[shelfPopup.selectedOption];
     const expiry = addDays(opt.days);
-    setItems(prev => prev.map(i => i.id===shelfPopup.itemId ? { ...i, expiry } : i));
+    persistItems(currentItemsRef.current.map(i => i.id===shelfPopup.itemId ? { ...i, expiry } : i));
     showToast(`🎉 "${shelfPopup.itemName}" 기한 설정 완료!`);
     setShelfPopup(null);
   };
@@ -775,7 +766,7 @@ export default function FridgeApp() {
   const addItem = () => {
     if (!form.name.trim()) return;
     const newItem = { id:Date.now(), ...form, name:form.name.trim() };
-    setItems(prev => [newItem, ...prev]);
+    persistItems([newItem, ...currentItemsRef.current]);
     setForm(p => ({ name:"", qty:"", unit:"g", category:p.category, expiry:"" }));
     showToast(`🥬 "${newItem.name}" 추가됐어요!`);
   };
@@ -783,11 +774,11 @@ export default function FridgeApp() {
   // 바코드로 추가
   const addFromBarcode = (data) => {
     const newItem = { id:Date.now(), name:data.name, qty:data.qty, unit:data.unit, category:data.category, expiry:data.expiry };
-    setItems(prev => [newItem, ...prev]);
+    persistItems([newItem, ...currentItemsRef.current]);
     showToast(`📦 "${newItem.name}" 바코드로 추가됐어요!`);
   };
 
-  const deleteItem = id => { setItems(prev=>prev.filter(i=>i.id!==id)); setSelected(prev=>prev.filter(s=>s!==id)); };
+  const deleteItem = id => { persistItems(currentItemsRef.current.filter(i=>i.id!==id)); setSelected(prev=>prev.filter(s=>s!==id)); };
   const toggleSelect = id => setSelected(prev=>prev.includes(id)?prev.filter(s=>s!==id):[...prev,id]);
 
   const searchRecipe = useCallback(async () => {
