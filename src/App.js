@@ -573,6 +573,7 @@ export default function FridgeApp() {
   const [showRoomSetup, setShowRoomSetup] = useState(false);
   const lastFirebaseItems = useRef(null);
   const currentItemsRef = useRef(items);
+  const hasInitializedRef = useRef(false); // Firebase 첫 응답 전까지 쓰기 차단
   const isShared = !!(roomCode && db);
 
   // currentItemsRef를 항상 최신 items로 유지
@@ -582,6 +583,8 @@ export default function FridgeApp() {
   useEffect(() => {
     const json = JSON.stringify(items);
     if (isShared) {
+      // Firebase 첫 응답 전에는 절대 쓰지 않음 (기존 데이터 보호)
+      if (!hasInitializedRef.current) return;
       if (json !== lastFirebaseItems.current) {
         set(ref(db, `fridges/${roomCode}/items`), items);
       }
@@ -593,6 +596,7 @@ export default function FridgeApp() {
   // Firebase 실시간 리스너
   useEffect(() => {
     if (!isShared) return;
+    hasInitializedRef.current = false; // 방이 바뀌면 초기화 플래그 리셋
     let isFirst = true;
     const itemsPath = ref(db, `fridges/${roomCode}/items`);
     const unsubscribe = onValue(itemsPath, (snapshot) => {
@@ -607,9 +611,13 @@ export default function FridgeApp() {
         lastFirebaseItems.current = JSON.stringify(newItems);
         setItems(newItems);
       }
+      hasInitializedRef.current = true; // 이제부터 쓰기 허용
       isFirst = false;
     });
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+      hasInitializedRef.current = false;
+    };
   }, [roomCode, isShared]);
 
   const joinRoom = () => {
