@@ -1,4 +1,5 @@
 /* global BarcodeDetector */
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useCallback, useRef } from "react";
 
 const STYLE = `
