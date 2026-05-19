@@ -1,6 +1,27 @@
 /* global BarcodeDetector */
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useCallback, useRef } from "react";
+import { initializeApp } from "firebase/app";
+import { getDatabase, ref, onValue, set } from "firebase/database";
+
+// ── Firebase 설정 ────────────────────────────────────────────────────────────
+// Firebase 콘솔(https://console.firebase.google.com)에서 프로젝트 생성 후
+// 아래 값을 채워주세요. 비어 있으면 공유 기능 없이 개인 모드로만 작동해요.
+const FIREBASE_CONFIG = {
+  apiKey: "",
+  authDomain: "",
+  databaseURL: "",        // 예: https://my-fridge-xxxx-default-rtdb.firebaseio.com
+  projectId: "",
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: ""
+};
+
+const isFirebaseReady = !!(FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.databaseURL);
+let db = null;
+if (isFirebaseReady) {
+  try { db = getDatabase(initializeApp(FIREBASE_CONFIG)); } catch (e) { console.error("Firebase init error:", e); }
+}
 
 const STYLE = `
   @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Gaegu:wght@400;700&display=swap');
@@ -125,6 +146,13 @@ const STYLE = `
   .tag-list{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.75rem;}
   .tag{background:var(--pink-l);border:1.5px solid var(--pink);color:var(--pink-d);border-radius:999px;font-size:.72rem;font-weight:700;padding:.22rem .65rem;display:flex;align-items:center;gap:.3rem;}
   .tag button{background:none;border:none;color:var(--pink-d);cursor:pointer;font-size:.85rem;padding:0;line-height:1;}
+
+  /* ── 공유 방 패널 ── */
+  .room-bar{display:flex;align-items:center;gap:.6rem;background:var(--sky-l);border:1.5px solid var(--sky);border-radius:var(--radius-sm);padding:.55rem .9rem;font-size:.78rem;font-weight:700;color:var(--sky-d);flex-wrap:wrap;margin-top:.9rem;}
+  .room-badge{background:var(--sky);color:#fff;border-radius:999px;padding:.15rem .65rem;font-size:.7rem;font-weight:800;}
+  .room-input-row{display:flex;gap:.4rem;width:100%;margin-top:.35rem;}
+  .room-input-row input{flex:1;background:var(--surface);border:1.5px solid var(--sky);border-radius:var(--radius-sm);color:var(--text);font-family:var(--font);font-size:.84rem;font-weight:600;padding:.45rem .75rem;outline:none;}
+  .room-input-row input:focus{box-shadow:0 0 0 3px var(--sky-l);}
 
   .toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--surface);border:1.5px solid var(--mint);color:var(--text);border-radius:var(--radius-sm);padding:.75rem 1.2rem;font-size:.8rem;font-weight:700;z-index:9999;animation:slideUp .2s ease;max-width:320px;box-shadow:var(--shadow);}
   @keyframes slideUp{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
@@ -542,7 +570,58 @@ export default function FridgeApp() {
   const [aiLoadingIds, setAiLoadingIds] = useState(new Set());
   const [showBarcode, setShowBarcode] = useState(false);
 
-  useEffect(() => { localStorage.setItem("fridge_items", JSON.stringify(items)); }, [items]);
+  // ── 공유 방 ────────────────────────────────────────────────────────────────
+  const [roomCode, setRoomCode] = useState(() => localStorage.getItem("fridge_room") || "");
+  const [roomInput, setRoomInput] = useState("");
+  const [showRoomSetup, setShowRoomSetup] = useState(false);
+  const lastFirebaseItems = useRef(null);
+  const isShared = !!(roomCode && db);
+
+  // localStorage 또는 Firebase 저장
+  useEffect(() => {
+    const json = JSON.stringify(items);
+    if (isShared) {
+      if (json !== lastFirebaseItems.current) {
+        set(ref(db, `fridges/${roomCode}/items`), items);
+      }
+    } else {
+      localStorage.setItem("fridge_items", json);
+    }
+  }, [items]);
+
+  // Firebase 실시간 리스너
+  useEffect(() => {
+    if (!isShared) return;
+    const itemsRef = ref(db, `fridges/${roomCode}/items`);
+    const unsubscribe = onValue(itemsRef, (snapshot) => {
+      const data = snapshot.val();
+      const newItems = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
+      lastFirebaseItems.current = JSON.stringify(newItems);
+      setItems(newItems);
+    });
+    return unsubscribe;
+  }, [roomCode, isShared]);
+
+  const joinRoom = () => {
+    const code = roomInput.trim().toLowerCase().replace(/\s+/g, "-");
+    if (!code) return;
+    localStorage.setItem("fridge_room", code);
+    setRoomCode(code);
+    setRoomInput("");
+    setShowRoomSetup(false);
+    showToast(`🤝 "${code}" 방에 연결됐어요!`);
+  };
+
+  const leaveRoom = () => {
+    localStorage.removeItem("fridge_room");
+    setRoomCode("");
+    setShowRoomSetup(false);
+    lastFirebaseItems.current = null;
+    const localItems = JSON.parse(localStorage.getItem("fridge_items") || "[]");
+    setItems(localItems);
+    showToast("👋 개인 모드로 전환됐어요");
+  };
+
   const showToast = msg => { setToast(msg); setTimeout(() => setToast(null), 3200); };
 
   const callShelfAI = useCallback(async (itemName, _category) => {
@@ -733,6 +812,38 @@ export default function FridgeApp() {
             {expired>0&&<span className="stat-pill pill-danger">❌ 만료 {expired}개</span>}
             {noExpiry>0&&<span className="stat-pill pill-none">🔖 미설정 {noExpiry}개</span>}
           </div>
+
+          {/* 공유 방 패널 */}
+          {isFirebaseReady && (
+            isShared ? (
+              <div className="room-bar">
+                <span>👥 공유 중</span>
+                <span className="room-badge">{roomCode}</span>
+                <span style={{flex:1,fontSize:".7rem",color:"var(--sky-d)"}}>같은 방 코드를 입력한 사람과 냉장고를 실시간 공유해요</span>
+                <button className="btn btn-ghost" style={{fontSize:".7rem",padding:".3rem .7rem"}} onClick={leaveRoom}>연결 해제</button>
+              </div>
+            ) : (
+              <div className="room-bar" style={{flexDirection:"column",alignItems:"flex-start"}}>
+                <div style={{display:"flex",alignItems:"center",gap:".5rem",width:"100%"}}>
+                  <span>👥 가족·친구와 공유하기</span>
+                  <button className="btn btn-ghost" style={{fontSize:".7rem",padding:".25rem .65rem",marginLeft:"auto"}} onClick={()=>setShowRoomSetup(v=>!v)}>
+                    {showRoomSetup?"닫기":"방 코드 설정"}
+                  </button>
+                </div>
+                {showRoomSetup && (
+                  <div className="room-input-row">
+                    <input
+                      value={roomInput}
+                      onChange={e=>setRoomInput(e.target.value)}
+                      onKeyDown={e=>e.key==="Enter"&&joinRoom()}
+                      placeholder="방 코드 입력 (예: 우리집, family123)"
+                    />
+                    <button className="btn btn-sky-out" onClick={joinRoom} disabled={!roomInput.trim()}>연결</button>
+                  </div>
+                )}
+              </div>
+            )
+          )}
         </header>
 
         <div className="tabs">
