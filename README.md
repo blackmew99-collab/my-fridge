@@ -1,70 +1,55 @@
-# Getting Started with Create React App
+# 🧊 My Fridge — 설치 & 배포 가이드
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## 📦 이 폴더에 들어있는 것
+```
+my-fridge-deploy/
+├── src/
+│   ├── App.js         ← 앱 전체 코드
+│   └── index.js       ← 진입점
+├── public/
+│   ├── index.html     ← HTML 템플릿
+│   ├── manifest.json  ← 앱 이름·아이콘 설정
+│   ├── favicon.ico    ← 브라우저 탭 아이콘
+│   ├── logo192.png    ← 홈 화면 아이콘 (소)
+│   └── logo512.png    ← 홈 화면 아이콘 (대)
+├── package.json       ← 프로젝트 설정
+└── 배포하기.bat        ← 자동 배포 스크립트
+```
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## 🚀 처음 설치할 때 (한 번만)
 
-### `npm start`
+### 1. 이 폴더 내용을 기존 my-fridge 폴더에 복사
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+탐색기에서 이 폴더의 모든 파일을 `C:\Users\black\Desktop\my-fridge` 에 붙여넣기
+(덮어쓰기 허용)
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### 2. PowerShell에서 실행
+```powershell
+cd C:\Users\black\Desktop\my-fridge
+npm install
+git add .
+git commit -m "아이콘 및 설정 업데이트"
+git push
+```
 
-### `npm test`
+### 3. Vercel 자동 재배포 확인
+vercel.com 대시보드에서 배포 완료 확인 후 핸드폰으로 접속!
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+---
 
-### `npm run build`
+## 🔄 나중에 코드 수정 후 배포할 때
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+`배포하기.bat` 파일을 **더블클릭** 하면 자동으로 업로드 & 배포돼요!
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+---
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## 📱 핸드폰 홈 화면에 추가
 
-### `npm run eject`
+| iPhone (Safari) | Android (Chrome) |
+|---|---|
+| 공유 버튼 탭 | 메뉴(⋮) 탭 |
+| "홈 화면에 추가" | "앱 설치" 또는 "홈 화면에 추가" |
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+> 기존에 이미 추가했다면 삭제 후 다시 추가해야 새 아이콘이 반영돼요!
