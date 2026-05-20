@@ -787,15 +787,13 @@ export default function FridgeApp() {
     setLoading(true); setRecipe("");
     const soonNames = items.filter(i=>{ const d=daysUntil(i.expiry); return d!==null&&d<=5; }).map(i=>i.name);
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages",{
-        method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,
-          messages:[{role:"user",content:`당신은 한국의 전문 요리사입니다. 아래 재료들을 활용한 ${recipeType} 레시피를 2가지 추천해주세요.\n\n사용 가능한 재료: ${ingredients.join(", ")}${soonNames.length?`\n\n⚠️ 소비기한 임박 재료 (우선 활용): ${soonNames.join(", ")}`:""}
-\n\n각 레시피 형식:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📌 레시피 이름\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n⏱ 조리시간:\n👥 인분:\n🥘 필요 재료:\n  -\n\n👨‍🍳 조리 순서:\n  1.\n\n💡 요리 팁:`}],
-        }),
+      const res = await fetch("/api/recipe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ingredients, recipeType, soonNames }),
       });
       const data = await res.json();
-      setRecipe(data.content?.map(b=>b.text||"").join("")||"레시피를 가져오지 못했습니다.");
+      setRecipe(data.text || "레시피를 가져오지 못했습니다.");
     } catch { setRecipe("⚠️ 네트워크 오류가 발생했습니다."); }
     finally { setLoading(false); }
   }, [items, selected, recipeType]);
