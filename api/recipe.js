@@ -28,9 +28,12 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
+    if (!response.ok || data.error) {
+      return res.status(200).json({ error: data.error?.message || JSON.stringify(data) });
+    }
     const text = data.content?.map(b => b.text || "").join("") || "레시피를 가져오지 못했습니다.";
     res.status(200).json({ text });
   } catch (e) {
-    res.status(500).json({ error: "서버 오류가 발생했습니다." });
+    res.status(500).json({ error: e.message });
   }
 }
