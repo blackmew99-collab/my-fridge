@@ -41,10 +41,21 @@ const STYLE = `
   .app{max-width:1060px;margin:0 auto;padding:2rem 1.5rem 5rem;}
 
   .header{text-align:center;margin-bottom:2.5rem;}
+  .header-clickable{display:inline-block;cursor:pointer;text-decoration:none;color:inherit;transition:opacity .15s;}
+  .header-clickable:hover{opacity:.75;}
   .header-deco{font-size:3rem;line-height:1;display:block;margin-bottom:.4rem;}
   .header-title{font-family:var(--font-title);font-size:clamp(2rem,5vw,3rem);color:var(--text);line-height:1.1;}
   .header-title span{color:var(--pink-d);}
   .header-sub{font-size:.78rem;color:var(--text2);margin-top:.4rem;letter-spacing:.06em;}
+
+  .install-btn{position:fixed;top:.9rem;right:1rem;z-index:200;display:flex;align-items:center;gap:.35rem;background:var(--sky-l);border:1.5px solid var(--sky);color:var(--sky-d);font-family:var(--font);font-size:.72rem;font-weight:700;padding:.42rem .85rem;border-radius:999px;cursor:pointer;box-shadow:var(--shadow-sm);transition:all .15s;white-space:nowrap;}
+  .install-btn:hover{background:var(--sky);color:#fff;}
+  .ios-guide-overlay{position:fixed;inset:0;background:rgba(74,55,40,.45);z-index:1100;display:flex;align-items:flex-end;justify-content:center;padding:1rem;padding-bottom:5rem;}
+  .ios-guide-box{background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);padding:1.4rem;max-width:360px;width:100%;box-shadow:0 16px 48px rgba(180,120,80,.25);text-align:center;}
+  .ios-guide-box h3{font-family:var(--font-title);font-size:1.2rem;margin-bottom:.6rem;}
+  .ios-guide-box p{font-size:.8rem;color:var(--text2);font-weight:600;line-height:1.7;margin-bottom:.5rem;}
+  .ios-guide-step{display:flex;align-items:center;gap:.6rem;background:var(--surface2);border-radius:var(--radius-sm);padding:.6rem .85rem;margin:.4rem 0;font-size:.8rem;font-weight:700;text-align:left;}
+  .ios-guide-step span{font-size:1.3rem;}
   .stat-pills{display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap;margin-top:1.2rem;}
   .stat-pill{display:flex;align-items:center;gap:.4rem;padding:.38rem .9rem;border-radius:999px;font-size:.78rem;font-weight:700;border:1.5px solid transparent;}
   .pill-total{background:var(--lav-l);color:var(--lav-d);border-color:var(--lav);}
@@ -567,6 +578,27 @@ export default function FridgeApp() {
   const [aiLoadingIds, setAiLoadingIds] = useState(new Set());
   const [showBarcode, setShowBarcode] = useState(false);
 
+  // ── PWA 홈 화면 추가 ────────────────────────────────────────────────────────
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [showIosGuide, setShowIosGuide] = useState(false);
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
+  const showInstallBtn = !isStandalone && (installPrompt || isIOS);
+
+  useEffect(() => {
+    const handler = e => { e.preventDefault(); setInstallPrompt(e); };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (isIOS) { setShowIosGuide(true); return; }
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === "accepted") setInstallPrompt(null);
+  };
+
   // ── 공유 방 ────────────────────────────────────────────────────────────────
   const [roomCode, setRoomCode] = useState(() => localStorage.getItem("fridge_room") || "");
   const [roomInput, setRoomInput] = useState("");
@@ -809,10 +841,33 @@ export default function FridgeApp() {
     <>
       <style>{STYLE}</style>
       <div className="app">
+        {/* 홈 화면 추가 버튼 */}
+        {showInstallBtn && (
+          <button className="install-btn" onClick={handleInstall}>
+            📲 홈 화면에 추가
+          </button>
+        )}
+
+        {/* iOS 안내 팝업 */}
+        {showIosGuide && (
+          <div className="ios-guide-overlay" onClick={() => setShowIosGuide(false)}>
+            <div className="ios-guide-box" onClick={e => e.stopPropagation()}>
+              <h3>📲 홈 화면에 추가하기</h3>
+              <p>Safari 브라우저에서 아래 순서로 추가해주세요</p>
+              <div className="ios-guide-step"><span>1️⃣</span> 하단 가운데 <strong>공유 버튼(□↑)</strong> 탭</div>
+              <div className="ios-guide-step"><span>2️⃣</span> 스크롤해서 <strong>"홈 화면에 추가"</strong> 탭</div>
+              <div className="ios-guide-step"><span>3️⃣</span> 우측 상단 <strong>"추가"</strong> 탭</div>
+              <button className="btn btn-pink" style={{width:"100%",justifyContent:"center",marginTop:".8rem"}} onClick={() => setShowIosGuide(false)}>확인</button>
+            </div>
+          </div>
+        )}
+
         <header className="header">
-          <span className="header-deco">🧊</span>
-          <h1 className="header-title">My <span>Fridge</span></h1>
-          <p className="header-sub">재료 관리 · 레시피 추천 · 소비기한 알림</p>
+          <div className="header-clickable" onClick={() => setTab("fridge")} role="button" tabIndex={0} onKeyDown={e => e.key==="Enter" && setTab("fridge")}>
+            <span className="header-deco">🧊</span>
+            <h1 className="header-title">My <span>Fridge</span></h1>
+            <p className="header-sub">재료 관리 · 레시피 추천 · 소비기한 알림</p>
+          </div>
           <div className="stat-pills">
             <span className="stat-pill pill-total">🥕 전체 {totalItems}개</span>
             {expiringSoon>0&&<span className="stat-pill pill-warn">⏰ 임박 {expiringSoon}개</span>}
