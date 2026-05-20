@@ -34,8 +34,11 @@ export default async function handler(req, res) {
       return res.status(200).json({ error: data.error?.message || JSON.stringify(data) });
     }
     const raw = data.choices?.[0]?.message?.content || "레시피를 가져오지 못했습니다.";
-    // 히라가나·가타카나·한자 등 비한국어 CJK 문자 제거
-    const text = raw.replace(/[぀-ヿ一-鿿豈-﫿]/g, "").replace(/\s{2,}/g, " ");
+    // 한글·ASCII·이모지만 남기고 한자·일본어·태국어 등 제거
+    const text = raw
+      .replace(/[぀-ヿ一-鿿豈-﫿฀-๿]/g, '')
+      .replace(/ {2,}/g, ' ')
+      .trim();
     res.status(200).json({ text });
   } catch (e) {
     res.status(500).json({ error: e.message });
