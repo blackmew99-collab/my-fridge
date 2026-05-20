@@ -23,8 +23,14 @@ export default async function handler(req, res) {
         model: "llama-3.3-70b-versatile",
         max_tokens: 1000,
         messages: [
-          { role: "system", content: "너는 한국 요리사야. 반드시 한국어만 사용해. 한자(漢字), 일본어 히라가나·가타카나, 영어 단어를 절대 쓰지 마. '少量' 대신 '조금', 'モールド' 대신 '틀', 'Fresh' 대신 '신선한' 처럼 모든 단어를 순수 한국어로만 표현해." },
-          { role: "user", content: prompt + "\n\n※ 주의: 한국어만 사용할 것. 한자, 일본어, 영어 절대 금지." },
+          {
+            role: "system",
+            content: "너는 한국 요리사야. 반드시 한국어만 사용해. 한자, 일본어, 베트남어, 태국어 등 외국 문자를 절대 쓰지 마. 모든 단어를 순수 한국어로만 표현해.",
+          },
+          {
+            role: "user",
+            content: prompt + "\n\n주의: 한국어만 사용할 것. 외국 문자 절대 금지.",
+          },
         ],
       }),
     });
@@ -33,12 +39,13 @@ export default async function handler(req, res) {
     if (!response.ok || data.error) {
       return res.status(200).json({ error: data.error?.message || JSON.stringify(data) });
     }
+
     const raw = data.choices?.[0]?.message?.content || "레시피를 가져오지 못했습니다.";
-    // 한글·ASCII·이모지만 남기고 한자·일본어·태국어 등 제거
-    const text = raw
-      .replace(/[぀-ヿ一-鿿豈-﫿฀-๿]/g, '')
-      .replace(/ {2,}/g, ' ')
-      .trim();
+
+    // 허용 목록: 한글 + ASCII + 이모지(서로게이트) + 줄바꿈 + 특수기호만 남김
+    const allowed = /[^가-힣ᄀ-ᇿ㄰-㆏ -~‐-⟿\uD800-\uDFFF\n\r]/g;
+    const text = raw.replace(allowed, "").replace(/ {2,}/g, " ").trim();
+
     res.status(200).json({ text });
   } catch (e) {
     res.status(500).json({ error: e.message });
