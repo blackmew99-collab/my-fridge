@@ -22,7 +22,10 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: "llama-3.3-70b-versatile",
         max_tokens: 1000,
-        messages: [{ role: "user", content: prompt }],
+        messages: [
+          { role: "system", content: "You are a Korean chef. You must respond ONLY in Korean (한국어). Never use Japanese, Chinese, or any other language. Every single word must be in Korean." },
+          { role: "user", content: prompt },
+        ],
       }),
     });
 
