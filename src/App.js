@@ -109,6 +109,13 @@ const STYLE = `
   .btn-barcode{background:var(--sky-l);border:1.5px solid var(--sky);color:var(--sky-d);font-size:.7rem;font-weight:700;padding:.5rem .65rem;border-radius:var(--radius-sm);cursor:pointer;font-family:var(--font);white-space:nowrap;transition:all .15s;display:inline-flex;align-items:center;gap:.2rem;flex-shrink:0;}
   .btn-barcode:hover{background:var(--sky);color:#fff;}
 
+  .cat-filter{display:flex;gap:.4rem;flex-wrap:wrap;}
+  .cat-filter-btn{padding:.32rem .85rem;border-radius:999px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text2);font-family:var(--font);font-size:.74rem;font-weight:700;cursor:pointer;transition:all .15s;}
+  .cat-filter-btn:hover{border-color:var(--sky);color:var(--sky-d);}
+  .cat-filter-btn.active-all{background:var(--pink-l);border-color:var(--pink);color:var(--pink-d);}
+  .cat-filter-btn.active-냉장{background:var(--sky-l);border-color:var(--sky);color:var(--sky-d);}
+  .cat-filter-btn.active-냉동{background:var(--lav-l);border-color:var(--lav);color:var(--lav-d);}
+
   .item-list{display:flex;flex-direction:column;gap:.45rem;margin-top:.9rem;}
   .item-row{display:flex;align-items:center;gap:.6rem;padding:.65rem .85rem;background:var(--surface2);border-radius:var(--radius-sm);border:1.5px solid var(--border);transition:all .15s;flex-wrap:wrap;}
   .item-row:hover{border-color:var(--pink);box-shadow:var(--shadow-sm);}
@@ -572,6 +579,7 @@ export default function FridgeApp() {
   const [shelfPopup, setShelfPopup] = useState(null);
   const [aiLoadingIds, setAiLoadingIds] = useState(new Set());
   const [showBarcode, setShowBarcode] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState(null); // null=전체, "냉장", "냉동"
 
   // ── PWA 홈 화면 추가 ────────────────────────────────────────────────────────
   const [installPrompt, setInstallPrompt] = useState(null);
@@ -952,11 +960,18 @@ export default function FridgeApp() {
                 <h2 className="card-title">🧺 냉장고 속 재료 ({totalItems})</h2>
                 {selected.length>0&&<span className="selected-info">💗 {selected.length}개 선택됨</span>}
               </div>
+              <div className="cat-filter">
+                <button className={`cat-filter-btn ${!categoryFilter?"active-all":""}`} onClick={()=>setCategoryFilter(null)}>전체 {totalItems}</button>
+                {CATEGORIES.map(cat=>{
+                  const cnt = items.filter(i=>i.category===cat).length;
+                  return <button key={cat} className={`cat-filter-btn ${categoryFilter===cat?`active-${cat}`:""}`} onClick={()=>setCategoryFilter(p=>p===cat?null:cat)}>{cat} {cnt}</button>;
+                })}
+              </div>
               {items.length===0 ? (
                 <div className="empty"><span className="empty-icon">🥬</span>재료를 추가해봐요!</div>
               ) : (
                 <div className="item-list">
-                  {items.map(item=>{
+                  {items.filter(item=>!categoryFilter||item.category===categoryFilter).map(item=>{
                     const days=daysUntil(item.expiry);
                     const isSelected=selected.includes(item.id);
                     const isAiLoading=aiLoadingIds.has(item.id);
