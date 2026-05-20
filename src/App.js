@@ -399,11 +399,11 @@ function BarcodePopup({ onClose, onAdd }) {
           <p>바코드를 스캔하거나 번호를 입력해 제품명을 자동으로 가져와요</p>
         </div>
 
-        {/* 모드 탭 */}
-        {!result && !looking && (
+        {/* 모드 탭 — BarcodeDetector 지원 시에만 표시 */}
+        {hasBarcodeAPI && !result && !looking && (
           <div className="bc-mode-tabs">
             <button className={`bc-mode-tab ${mode==="camera"?"active":""}`} onClick={()=>setMode("camera")}>
-              📷 카메라 스캔{!hasBarcodeAPI && " (미지원)"}
+              📷 카메라 스캔
             </button>
             <button className={`bc-mode-tab ${mode==="manual"?"active":""}`} onClick={()=>setMode("manual")}>
               ⌨️ 번호 직접 입력
@@ -420,41 +420,32 @@ function BarcodePopup({ onClose, onAdd }) {
         )}
 
         {/* 카메라 모드 */}
-        {!looking && !result && mode === "camera" && (
+        {!looking && !result && mode === "camera" && hasBarcodeAPI && (
           <>
-            {!hasBarcodeAPI ? (
-              <div style={{background:"var(--warn-l)",border:"1.5px solid var(--warn)",borderRadius:"var(--radius-sm)",padding:".9rem 1rem",fontSize:".8rem",color:"var(--warn-d)",fontWeight:700,marginBottom:".9rem"}}>
-                ⚠️ 이 브라우저(iOS Safari·Firefox 등)는 카메라 바코드 인식을 지원하지 않아요.<br/>
-                <span style={{fontWeight:600}}>👉 "번호 직접 입력" 탭에서 바코드 번호를 입력하거나, Android Chrome을 이용해주세요.</span>
-              </div>
+            <div className="bc-camera-wrap">
+              {cameraState === "active" ? (
+                <>
+                  <video ref={videoRef} className="bc-video" playsInline muted />
+                  <div className="bc-scan-line" />
+                  <div className="bc-corners" style={{position:"absolute",inset:0,pointerEvents:"none"}} />
+                  <div className="bc-corners-br" style={{position:"absolute",inset:0,pointerEvents:"none"}} />
+                </>
+              ) : cameraState === "error" ? (
+                <div className="bc-camera-msg" style={{color:"#ffb3b3"}}>⚠️ {cameraError}</div>
+              ) : (
+                <div className="bc-camera-msg">📷 카메라를 시작하면<br/>바코드를 자동으로 인식해요</div>
+              )}
+            </div>
+            {cameraState !== "active" ? (
+              <button className="btn btn-sky-out" style={{width:"100%",justifyContent:"center"}} onClick={startCamera}>
+                📷 카메라 시작하기
+              </button>
             ) : (
-              <>
-                <div className="bc-camera-wrap">
-                  {cameraState === "active" ? (
-                    <>
-                      <video ref={videoRef} className="bc-video" playsInline muted />
-                      <div className="bc-scan-line" />
-                      <div className="bc-corners" style={{position:"absolute",inset:0,pointerEvents:"none"}} />
-                      <div className="bc-corners-br" style={{position:"absolute",inset:0,pointerEvents:"none"}} />
-                    </>
-                  ) : cameraState === "error" ? (
-                    <div className="bc-camera-msg" style={{color:"#ffb3b3"}}>⚠️ {cameraError}</div>
-                  ) : (
-                    <div className="bc-camera-msg">📷 카메라를 시작하면<br/>바코드를 자동으로 인식해요</div>
-                  )}
-                </div>
-                {cameraState !== "active" ? (
-                  <button className="btn btn-sky-out" style={{width:"100%",justifyContent:"center"}} onClick={startCamera}>
-                    📷 카메라 시작하기
-                  </button>
-                ) : (
-                  <button className="btn btn-ghost" style={{width:"100%",justifyContent:"center"}} onClick={()=>{stopCamera();setCameraState("idle");}}>
-                    ⏹ 카메라 중지
-                  </button>
-                )}
-                {scanned && <p style={{fontSize:".7rem",color:"var(--text2)",fontWeight:600,marginTop:".5rem",textAlign:"center"}}>스캔됨: {scanned}</p>}
-              </>
+              <button className="btn btn-ghost" style={{width:"100%",justifyContent:"center"}} onClick={()=>{stopCamera();setCameraState("idle");}}>
+                ⏹ 카메라 중지
+              </button>
             )}
+            {scanned && <p style={{fontSize:".7rem",color:"var(--text2)",fontWeight:600,marginTop:".5rem",textAlign:"center"}}>스캔됨: {scanned}</p>}
           </>
         )}
 
