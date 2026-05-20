@@ -230,10 +230,10 @@ const STYLE = `
   .bc-not-found{background:var(--warn-l);border:1.5px solid var(--warn);border-radius:var(--radius-sm);padding:.85rem 1rem;font-size:.8rem;color:var(--warn-d);font-weight:700;margin-bottom:.9rem;}
 `;
 
-const CATEGORIES = ["채소","육류","해산물","유제품","과일","음료","조미료","기타"];
+const CATEGORIES = ["냉장","냉동"];
 const RECIPE_TYPES = ["한식","양식","일식","중식","채식","간단요리","다이어트"];
-const CAT_COLORS = {"채소":"#86dbb6","육류":"#ffb085","해산물":"#93d0f5","유제품":"#f9a8c9","과일":"#c4b0f7","음료":"#ffd97d","조미료":"#ffb3b3","기타":"#c4b0f7"};
-const CAT_TEXT   = {"채소":"#2d8a60","육류":"#a0520c","해산물":"#1a6b9a","유제품":"#c2607a","과일":"#6040b8","음료":"#a06000","조미료":"#b83030","기타":"#6040b8"};
+const CAT_COLORS = {"냉장":"#93d0f5","냉동":"#c4b0f7"};
+const CAT_TEXT   = {"냉장":"#1a6b9a","냉동":"#6040b8"};
 
 function daysUntil(d){if(!d)return null;return Math.ceil((new Date(d)-new Date())/86400000);}
 function expClass(days){if(days===null)return "";if(days<=3)return "danger";if(days<=7)return "warn";return "";}
@@ -253,13 +253,8 @@ async function lookupBarcode(barcode) {
   if (!name) return null;
   // 카테고리 매핑
   const cats = (p.categories_tags || []).join(" ").toLowerCase();
-  let category = "기타";
-  if (cats.includes("vegetable") || cats.includes("채소") || cats.includes("야채")) category = "채소";
-  else if (cats.includes("meat") || cats.includes("육류") || cats.includes("chicken") || cats.includes("pork") || cats.includes("beef")) category = "육류";
-  else if (cats.includes("seafood") || cats.includes("fish") || cats.includes("해산물")) category = "해산물";
-  else if (cats.includes("dairy") || cats.includes("milk") || cats.includes("유제품") || cats.includes("cheese")) category = "유제품";
-  else if (cats.includes("fruit") || cats.includes("과일")) category = "과일";
-  else if (cats.includes("beverage") || cats.includes("drink") || cats.includes("음료")) category = "음료";
+  let category = "냉장";
+  if (cats.includes("frozen") || cats.includes("냉동")) category = "냉동";
   return { name: name.trim(), category, brand: p.brands || "", quantity: p.quantity || "" };
 }
 
@@ -274,7 +269,7 @@ function BarcodePopup({ onClose, onAdd }) {
   const [result, setResult] = useState(null);   // { name, category, brand, quantity }
   const [notFound, setNotFound] = useState(false);
   const [scanned, setScanned] = useState("");   // last scanned barcode string
-  const [editForm, setEditForm] = useState({ qty: "", unit: "개", category: "기타", expiry: "" });
+  const [editForm, setEditForm] = useState({ qty: "", unit: "개", category: "냉장", expiry: "" });
 
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -568,7 +563,7 @@ function ShelfPopup({ popup, onClose, onApply, onSelect }) {
 export default function FridgeApp() {
   const [items, setItems] = useState(() => { try { return JSON.parse(localStorage.getItem("fridge_items")||"[]"); } catch { return []; } });
   const [tab, setTab] = useState("fridge");
-  const [form, setForm] = useState({ name:"", qty:"", unit:"g", category:"채소", expiry:"" });
+  const [form, setForm] = useState({ name:"", qty:"", unit:"g", category:"냉장", expiry:"" });
   const [selected, setSelected] = useState([]);
   const [recipeType, setRecipeType] = useState("한식");
   const [recipe, setRecipe] = useState("");
@@ -743,17 +738,11 @@ export default function FridgeApp() {
 
     const key = Object.keys(DB).find(k => itemName.includes(k) || k.includes(itemName));
     const CAT_DEFAULT = {
-      "채소":   { s:"냉장 보관 시 약 5~7일 신선하게 유지돼요", t:"비닐백에 넣어 냉장 채소칸에 보관하세요", fast:3, normal:7, long:30 },
-      "육류":   { s:"냉장 보관 시 1~2일 이내에 사용하세요", t:"소분하여 밀폐 냉동하면 2~3개월 가능해요", fast:1, normal:2, long:90 },
-      "해산물": { s:"냉장 보관 시 1~2일 이내에 사용하세요", t:"밀폐 후 냉동 보관을 권장해요", fast:1, normal:2, long:60 },
-      "유제품": { s:"개봉 후 냉장 보관 시 5~7일 이내에 사용하세요", t:"밀폐 용기에 넣어 냉장 보관하세요", fast:3, normal:7, long:14 },
-      "과일":   { s:"냉장 보관 시 약 5~10일 신선하게 유지돼요", t:"씻지 말고 냉장 보관하다 먹기 전에 씻으세요", fast:3, normal:7, long:30 },
-      "음료":   { s:"개봉 후 냉장 보관 시 3~5일 이내에 드세요", t:"개봉 후에는 밀폐하여 냉장 보관하세요", fast:2, normal:5, long:14 },
-      "조미료": { s:"서늘하고 건조한 곳에서 장기 보관 가능해요", t:"직사광선과 습기를 피해 밀봉 보관하세요", fast:30, normal:180, long:365 },
-      "기타":   { s:"냉장 보관 시 약 5~7일 이내에 사용하세요", t:"밀폐 용기에 넣어 냉장 보관하세요", fast:3, normal:7, long:30 },
+      "냉장": { s:"냉장 보관 시 약 5~7일 신선하게 유지돼요", t:"밀폐 용기에 넣어 냉장 보관하세요", fast:3, normal:7, long:30 },
+      "냉동": { s:"냉동 보관 시 1~3개월 보관 가능해요", t:"소분하여 밀폐 후 냉동 보관하세요", fast:30, normal:60, long:90 },
     };
 
-    const d = DB[key] || CAT_DEFAULT[_category] || CAT_DEFAULT["기타"];
+    const d = DB[key] || CAT_DEFAULT[_category] || CAT_DEFAULT["냉장"];
     return {
       summary: d.s,
       tip: d.t,
