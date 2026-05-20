@@ -1,4 +1,3 @@
-/* global BarcodeDetector */
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useCallback, useRef } from "react";
 import { initializeApp } from "firebase/app";
@@ -104,10 +103,6 @@ const STYLE = `
   .btn-ai:hover{background:var(--lav);color:#fff;}
   .btn-ai:disabled{opacity:.4;cursor:not-allowed;}
   .btn-ai-sm{font-size:.63rem;padding:.22rem .55rem;border-radius:8px;}
-
-  /* 바코드 버튼 */
-  .btn-barcode{background:var(--sky-l);border:1.5px solid var(--sky);color:var(--sky-d);font-size:.7rem;font-weight:700;padding:.5rem .65rem;border-radius:var(--radius-sm);cursor:pointer;font-family:var(--font);white-space:nowrap;transition:all .15s;display:inline-flex;align-items:center;gap:.2rem;flex-shrink:0;}
-  .btn-barcode:hover{background:var(--sky);color:#fff;}
 
   .cat-filter{display:flex;gap:.4rem;flex-wrap:wrap;}
   .cat-filter-btn{padding:.32rem .85rem;border-radius:999px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text2);font-family:var(--font);font-size:.74rem;font-weight:700;cursor:pointer;transition:all .15s;}
@@ -216,38 +211,6 @@ const STYLE = `
   .shelf-opt-date{font-size:.67rem;color:var(--text2);font-weight:600;}
   .popup-loading{display:flex;align-items:center;gap:.6rem;color:var(--text2);font-size:.8rem;font-weight:700;padding:1.5rem 0;justify-content:center;}
 
-  /* ── 바코드 팝업 ── */
-  .bc-mode-tabs{display:flex;gap:.5rem;margin-bottom:1.1rem;}
-  .bc-mode-tab{flex:1;padding:.45rem .7rem;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text2);font-family:var(--font);font-size:.76rem;font-weight:700;cursor:pointer;transition:all .15s;text-align:center;}
-  .bc-mode-tab.active{background:var(--sky-l);border-color:var(--sky);color:var(--sky-d);}
-
-  /* 카메라 뷰파인더 */
-  .bc-camera-wrap{position:relative;background:#1a1a2e;border-radius:var(--radius-sm);overflow:hidden;margin-bottom:1rem;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;}
-  .bc-video{width:100%;height:100%;object-fit:cover;display:block;}
-  .bc-scan-line{position:absolute;left:10%;right:10%;height:2px;background:var(--pink);border-radius:1px;animation:scanline 2s ease-in-out infinite;}
-  @keyframes scanline{0%,100%{top:20%}50%{top:75%}}
-  .bc-corners::before,.bc-corners::after{content:'';position:absolute;width:28px;height:28px;border-color:var(--pink);border-style:solid;}
-  .bc-corners::before{top:10%;left:10%;border-width:3px 0 0 3px;border-radius:4px 0 0 0;}
-  .bc-corners::after{bottom:10%;right:10%;border-width:0 3px 3px 0;border-radius:0 0 4px 0;}
-  .bc-corners-br::before{top:10%;right:10%;border-width:3px 3px 0 0;border-radius:0 4px 0 0;}
-  .bc-corners-br::after{bottom:10%;left:10%;border-width:0 0 3px 3px;border-radius:0 0 0 4px;}
-  .bc-camera-msg{color:#fff;font-size:.82rem;font-weight:700;text-align:center;padding:1rem;}
-
-  /* 바코드 직접입력 */
-  .bc-manual-row{display:flex;gap:.5rem;margin-bottom:.75rem;}
-  .bc-manual-row input{flex:1;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:var(--font);font-size:.9rem;font-weight:600;padding:.6rem .85rem;outline:none;transition:border-color .15s;}
-  .bc-manual-row input:focus{border-color:var(--sky);box-shadow:0 0 0 3px var(--sky-l);}
-
-  /* 스캔 결과 */
-  .bc-result{background:var(--mint-l);border:1.5px solid var(--mint);border-radius:var(--radius-sm);padding:1rem;margin-bottom:1rem;}
-  .bc-result-name{font-size:1rem;font-weight:800;color:var(--text);margin-bottom:.3rem;}
-  .bc-result-meta{font-size:.75rem;color:var(--text2);font-weight:600;margin-bottom:.7rem;}
-  .bc-result-fields{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;}
-  .bc-field{display:flex;flex-direction:column;gap:.25rem;}
-  .bc-field label{font-size:.65rem;color:var(--text2);font-weight:700;letter-spacing:.06em;}
-  .bc-field input,.bc-field select{background:var(--surface);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:.8rem;font-weight:600;padding:.42rem .65rem;outline:none;width:100%;}
-  .bc-field input:focus,.bc-field select:focus{border-color:var(--mint);}
-  .bc-not-found{background:var(--warn-l);border:1.5px solid var(--warn);border-radius:var(--radius-sm);padding:.85rem 1rem;font-size:.8rem;color:var(--warn-d);font-weight:700;margin-bottom:.9rem;}
 `;
 
 const CATEGORIES = ["냉장","냉동"];
@@ -262,281 +225,6 @@ function expTextClass(days){if(days===null)return "exp-none";if(days<=3)return "
 function addDays(n){const d=new Date();d.setDate(d.getDate()+n);return d.toISOString().split("T")[0];}
 function makeCalendarLink(item){const d=new Date(item.expiry);const fmt=n=>String(n).padStart(2,"0");const date=`${d.getFullYear()}${fmt(d.getMonth()+1)}${fmt(d.getDate())}`;return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`🧊 소비기한 임박: ${item.name}`)}&dates=${date}/${date}&details=${encodeURIComponent(`재료: ${item.name}`)}`;}
 function makeMailLink(items){const subject=encodeURIComponent(`[냉장고 알림] 소비기한 임박 재료 ${items.length}개`);const body=encodeURIComponent(`소비기한이 임박한 재료들이에요!\n\n`+items.map(i=>`• ${i.name} — ${expLabel(daysUntil(i.expiry))}`).join("\n")+`\n\n빨리 써주세요 🥺`);return `mailto:?subject=${subject}&body=${body}`;}
-
-// Open Food Facts API로 바코드 조회
-async function lookupBarcode(barcode) {
-  const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=product_name,product_name_ko,categories_tags,quantity,brands`);
-  const data = await res.json();
-  if (data.status !== 1) return null;
-  const p = data.product;
-  const name = p.product_name_ko || p.product_name || "";
-  if (!name) return null;
-  // 카테고리 매핑
-  const cats = (p.categories_tags || []).join(" ").toLowerCase();
-  let category = "냉장";
-  if (cats.includes("frozen") || cats.includes("냉동")) category = "냉동";
-  return { name: name.trim(), category, brand: p.brands || "", quantity: p.quantity || "" };
-}
-
-// ── 바코드 팝업 ────────────────────────────────────────────────────────────
-function BarcodePopup({ onClose, onAdd }) {
-  const [hasBarcodeAPI] = useState(() => "BarcodeDetector" in window);
-  const [mode, setMode] = useState(() => "BarcodeDetector" in window ? "camera" : "manual");
-  const [cameraState, setCameraState] = useState("idle"); // idle | requesting | active | error
-  const [cameraError, setCameraError] = useState("");
-  const [manualCode, setManualCode] = useState("");
-  const [looking, setLooking] = useState(false);
-  const [result, setResult] = useState(null);   // { name, category, brand, quantity }
-  const [notFound, setNotFound] = useState(false);
-  const [scanned, setScanned] = useState("");   // last scanned barcode string
-  const [editForm, setEditForm] = useState({ name: "", qty: "", unit: "개", category: "냉장", expiry: "" });
-
-  const videoRef = useRef(null);
-  const streamRef = useRef(null);
-  const detectorRef = useRef(null);
-  const rafRef = useRef(null);
-
-  // 카메라 시작
-  const startCamera = useCallback(async () => {
-    setCameraState("requesting");
-    setCameraError("");
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-      detectorRef.current = new BarcodeDetector({ formats: ["ean_13","ean_8","upc_a","upc_e","qr_code","code_128","code_39"] });
-      setCameraState("active");
-    } catch (e) {
-      setCameraState("error");
-      setCameraError(e.name === "NotAllowedError" ? "카메라 접근 권한이 거부됐어요. 브라우저 설정에서 허용해주세요." : `카메라를 열 수 없어요: ${e.message}`);
-    }
-  }, []);
-
-  // 카메라 중지
-  const stopCamera = useCallback(() => {
-    cancelAnimationFrame(rafRef.current);
-    streamRef.current?.getTracks().forEach(t => t.stop());
-    streamRef.current = null;
-  }, []);
-
-  // 바코드 감지 루프
-  useEffect(() => {
-    if (cameraState !== "active") return;
-    let active = true;
-    const detect = async () => {
-      if (!active || !videoRef.current || !detectorRef.current) return;
-      try {
-        const codes = await detectorRef.current.detect(videoRef.current);
-        if (codes.length > 0) {
-          const code = codes[0].rawValue;
-          if (code !== scanned) {
-            setScanned(code);
-            stopCamera();
-            setCameraState("idle");
-            await doLookup(code);
-          }
-        }
-      } catch {}
-      if (active) rafRef.current = requestAnimationFrame(detect);
-    };
-    rafRef.current = requestAnimationFrame(detect);
-    return () => { active = false; cancelAnimationFrame(rafRef.current); };
-  }, [cameraState, scanned]);
-
-  // 언마운트 시 카메라 정리
-  useEffect(() => () => stopCamera(), []);
-
-  // 탭 전환 시 카메라 처리
-  useEffect(() => {
-    if (mode === "manual") stopCamera();
-  }, [mode]);
-
-  const doLookup = async (code) => {
-    setLooking(true); setResult(null); setNotFound(false);
-    try {
-      const found = await lookupBarcode(code);
-      if (found) {
-        setResult(found);
-        setEditForm(p => ({ ...p, name: found.name, category: found.category }));
-      } else {
-        setNotFound(true);
-      }
-    } catch {
-      setNotFound(true);
-    } finally {
-      setLooking(false);
-    }
-  };
-
-  const handleManualSearch = () => {
-    if (!manualCode.trim()) return;
-    setScanned(manualCode.trim());
-    doLookup(manualCode.trim());
-  };
-
-  const handleAdd = () => {
-    if (!result) return;
-    onAdd({ ...editForm, name: editForm.name.trim() || result.name });
-    onClose();
-  };
-
-  const handleAddManual = () => {
-    if (!editForm.name.trim()) return;
-    onAdd({ ...editForm, name: editForm.name.trim() });
-    onClose();
-  };
-
-  const resetResult = () => { setResult(null); setNotFound(false); setScanned(""); setManualCode(""); setEditForm(p => ({...p, name:""})); };
-
-  return (
-    <div className="popup-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="popup-box">
-        <div className="popup-header">
-          <h3>📦 바코드로 재료 추가</h3>
-          <p>바코드를 스캔하거나 번호를 입력해 제품명을 자동으로 가져와요</p>
-        </div>
-
-        {/* 모드 탭 — BarcodeDetector 지원 시에만 표시 */}
-        {hasBarcodeAPI && !result && !looking && (
-          <div className="bc-mode-tabs">
-            <button className={`bc-mode-tab ${mode==="camera"?"active":""}`} onClick={()=>setMode("camera")}>
-              📷 카메라 스캔
-            </button>
-            <button className={`bc-mode-tab ${mode==="manual"?"active":""}`} onClick={()=>setMode("manual")}>
-              ⌨️ 번호 직접 입력
-            </button>
-          </div>
-        )}
-
-        {/* 로딩 */}
-        {looking && (
-          <div className="popup-loading">
-            <span>제품 정보 조회 중</span>
-            <span className="dot-anim"><span>.</span><span>.</span><span>.</span></span>
-          </div>
-        )}
-
-        {/* 카메라 모드 */}
-        {!looking && !result && mode === "camera" && hasBarcodeAPI && (
-          <>
-            <div className="bc-camera-wrap">
-              {cameraState === "active" ? (
-                <>
-                  <video ref={videoRef} className="bc-video" playsInline muted />
-                  <div className="bc-scan-line" />
-                  <div className="bc-corners" style={{position:"absolute",inset:0,pointerEvents:"none"}} />
-                  <div className="bc-corners-br" style={{position:"absolute",inset:0,pointerEvents:"none"}} />
-                </>
-              ) : cameraState === "error" ? (
-                <div className="bc-camera-msg" style={{color:"#ffb3b3"}}>⚠️ {cameraError}</div>
-              ) : (
-                <div className="bc-camera-msg">📷 카메라를 시작하면<br/>바코드를 자동으로 인식해요</div>
-              )}
-            </div>
-            {cameraState !== "active" ? (
-              <button className="btn btn-sky-out" style={{width:"100%",justifyContent:"center"}} onClick={startCamera}>
-                📷 카메라 시작하기
-              </button>
-            ) : (
-              <button className="btn btn-ghost" style={{width:"100%",justifyContent:"center"}} onClick={()=>{stopCamera();setCameraState("idle");}}>
-                ⏹ 카메라 중지
-              </button>
-            )}
-            {scanned && <p style={{fontSize:".7rem",color:"var(--text2)",fontWeight:600,marginTop:".5rem",textAlign:"center"}}>스캔됨: {scanned}</p>}
-          </>
-        )}
-
-        {/* 번호 직접 입력 모드 */}
-        {!looking && !result && mode === "manual" && (
-          <>
-            <div className="bc-manual-row">
-              <input
-                value={manualCode}
-                onChange={e => setManualCode(e.target.value.replace(/\D/g,""))}
-                onKeyDown={e => e.key === "Enter" && handleManualSearch()}
-                placeholder="바코드 번호 입력 (예: 8801234567890)"
-                maxLength={14}
-              />
-              <button className="btn btn-sky-out" onClick={handleManualSearch} disabled={!manualCode.trim()}>조회</button>
-            </div>
-            <p style={{fontSize:".72rem",color:"var(--text2)",fontWeight:600}}>
-              💡 제품 포장지의 바코드 번호를 직접 입력해보세요. Open Food Facts 글로벌 DB에서 조회돼요.
-            </p>
-          </>
-        )}
-
-        {/* 못 찾음 */}
-        {!looking && notFound && (
-          <>
-            <div className="bc-not-found">
-              🔍 바코드 <strong>{scanned}</strong> 제품을 DB에서 찾지 못했어요.<br/>
-              <span style={{fontWeight:600}}>아래에 제품명을 직접 입력해서 추가하세요!</span>
-            </div>
-            <div className="bc-manual-row" style={{marginBottom:".5rem"}}>
-              <input
-                value={editForm.name}
-                onChange={e => setEditForm(p => ({...p, name: e.target.value}))}
-                onKeyDown={e => e.key === "Enter" && handleAddManual()}
-                placeholder="제품명 직접 입력 (예: 신라면)"
-                autoFocus
-              />
-              <button className="btn btn-mint" onClick={handleAddManual} disabled={!editForm.name.trim()}>+ 추가</button>
-            </div>
-            <button className="btn btn-ghost" style={{fontSize:".75rem"}} onClick={resetResult}>↩ 다시 시도</button>
-          </>
-        )}
-
-        {/* 결과 */}
-        {!looking && result && (
-          <>
-            <div className="bc-result">
-              <div className="bc-result-meta" style={{marginBottom:".5rem"}}>
-                {result.brand && `브랜드: ${result.brand}`}{result.brand && result.quantity && " · "}{result.quantity && `${result.quantity}`}
-                {scanned && ` · 바코드: ${scanned}`}
-              </div>
-              <div className="bc-result-fields">
-                <div className="bc-field" style={{gridColumn:"1/-1"}}>
-                  <label>제품명 (수정 가능)</label>
-                  <input value={editForm.name} onChange={e=>setEditForm(p=>({...p,name:e.target.value}))} />
-                </div>
-                <div className="bc-field">
-                  <label>수량</label>
-                  <div style={{display:"flex",gap:".3rem"}}>
-                    <input value={editForm.qty} onChange={e=>setEditForm(p=>({...p,qty:e.target.value}))} placeholder="1" style={{flex:1}} />
-                    <select value={editForm.unit} onChange={e=>setEditForm(p=>({...p,unit:e.target.value}))} style={{width:"58px"}}>
-                      {["g","kg","ml","L","개","봉","팩","줌"].map(u=><option key={u}>{u}</option>)}
-                    </select>
-                  </div>
-                </div>
-                <div className="bc-field">
-                  <label>카테고리</label>
-                  <select value={editForm.category} onChange={e=>setEditForm(p=>({...p,category:e.target.value}))}>
-                    {CATEGORIES.map(c=><option key={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div className="bc-field" style={{gridColumn:"1/-1"}}>
-                  <label>소비기한 (선택)</label>
-                  <input type="date" value={editForm.expiry} onChange={e=>setEditForm(p=>({...p,expiry:e.target.value}))} style={{colorScheme:"light"}} />
-                </div>
-              </div>
-            </div>
-            <div style={{display:"flex",gap:".5rem"}}>
-              <button className="btn btn-ghost" style={{fontSize:".75rem"}} onClick={resetResult}>↩ 다시 스캔</button>
-              <button className="btn btn-mint" style={{flex:1,justifyContent:"center"}} onClick={handleAdd}>+ 냉장고에 추가하기</button>
-            </div>
-          </>
-        )}
-
-        <div className="popup-actions">
-          <button className="btn btn-ghost" onClick={()=>{stopCamera();onClose();}}>닫기</button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ── 보존기한 팝업 ─────────────────────────────────────────────────────────
 function ShelfPopup({ popup, onClose, onApply, onSelect }) {
@@ -600,7 +288,6 @@ export default function FridgeApp() {
   const [toast, setToast] = useState(null);
   const [shelfPopup, setShelfPopup] = useState(null);
   const [aiLoadingIds, setAiLoadingIds] = useState(new Set());
-  const [showBarcode, setShowBarcode] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState(null); // null=전체, "냉장", "냉동"
   const [notifyEmails, setNotifyEmails] = useState(() => {
     const saved = localStorage.getItem("notify_email") || "";
@@ -867,13 +554,6 @@ export default function FridgeApp() {
     showToast(`🥬 "${newItem.name}" 추가됐어요!`);
   };
 
-  // 바코드로 추가
-  const addFromBarcode = (data) => {
-    const newItem = { id:Date.now(), name:data.name, qty:data.qty, unit:data.unit, category:data.category, expiry:data.expiry };
-    persistItems([newItem, ...currentItemsRef.current]);
-    showToast(`📦 "${newItem.name}" 바코드로 추가됐어요!`);
-  };
-
   const deleteItem = id => { persistItems(currentItemsRef.current.filter(i=>i.id!==id)); setSelected(prev=>prev.filter(s=>s!==id)); };
   const toggleSelect = id => setSelected(prev=>prev.includes(id)?prev.filter(s=>s!==id):[...prev,id]);
 
@@ -986,7 +666,6 @@ export default function FridgeApp() {
             <div className="card">
               <div className="card-header">
                 <h2 className="card-title">🛒 재료 추가하기</h2>
-                <button className="btn-barcode" onClick={()=>setShowBarcode(true)}>📦 바코드 스캔</button>
               </div>
               <div className="add-form">
                 <div className="field">
@@ -1018,7 +697,7 @@ export default function FridgeApp() {
                 <button className="btn btn-pink btn-add" onClick={addItem} style={{alignSelf:"flex-end"}}>+ 추가</button>
               </div>
               <p style={{fontSize:".7rem",color:"var(--text2)",fontWeight:600,marginTop:".7rem"}}>
-                📦 <strong style={{color:"var(--sky-d)"}}>바코드 스캔</strong>으로 제품명을 자동 입력하거나, 💜 소비기한을 모를 땐 <strong style={{color:"var(--lav-d)"}}>✨ AI</strong>를 눌러보세요!
+                💜 소비기한을 모를 땐 <strong style={{color:"var(--lav-d)"}}>✨ AI</strong>를 눌러보세요!
               </p>
             </div>
 
@@ -1179,7 +858,6 @@ export default function FridgeApp() {
         )}
       </div>
 
-      {showBarcode && <BarcodePopup onClose={()=>setShowBarcode(false)} onAdd={addFromBarcode} />}
       <ShelfPopup popup={shelfPopup} onClose={()=>setShelfPopup(null)} onApply={applyShelfLife} onSelect={i=>setShelfPopup(prev=>prev?{...prev,selectedOption:i}:null)} />
       {toast&&<div className="toast">{toast}</div>}
     </>
