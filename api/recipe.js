@@ -20,7 +20,7 @@ export default async function handler(req, res) {
         "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "gemma2-9b-it",
+        model: "llama-3.3-70b-versatile",
         max_tokens: 1000,
         messages: [
           { role: "system", content: "너는 한국 요리사야. 반드시 한국어만 사용해. 한자(漢字), 일본어 히라가나·가타카나, 영어 단어를 절대 쓰지 마. '少量' 대신 '조금', 'モールド' 대신 '틀', 'Fresh' 대신 '신선한' 처럼 모든 단어를 순수 한국어로만 표현해." },
