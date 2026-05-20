@@ -128,21 +128,6 @@ const STYLE = `
   .item-check:checked{background:var(--pink);border-color:var(--pink);}
   .item-check:checked::after{content:'✓';position:absolute;top:-3px;left:1px;font-size:.75rem;color:#fff;font-weight:800;}
 
-  .recipe-type{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1rem;}
-  .rtype{padding:.38rem .85rem;border:1.5px solid var(--border);border-radius:999px;background:var(--surface2);color:var(--text2);font-family:var(--font);font-size:.74rem;font-weight:700;cursor:pointer;transition:all .15s;}
-  .rtype:hover{border-color:var(--mint);color:var(--mint-d);}
-  .rtype.active{border-color:var(--mint);background:var(--mint-l);color:var(--mint-d);}
-  .recipe-controls{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem;}
-  .recipe-output{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:1.1rem;font-size:.82rem;line-height:1.8;white-space:pre-wrap;min-height:200px;max-height:520px;overflow-y:auto;color:var(--text);}
-  .recipe-output.placeholder{display:flex;align-items:center;justify-content:center;color:var(--text3);font-style:italic;}
-  .recipe-output::-webkit-scrollbar{width:6px;}
-  .recipe-output::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
-
-  .thinking{display:flex;align-items:center;gap:.6rem;color:var(--text2);font-size:.8rem;font-weight:600;}
-  .dot-anim span{animation:blink 1.2s infinite;display:inline-block;}
-  .dot-anim span:nth-child(2){animation-delay:.2s;}
-  .dot-anim span:nth-child(3){animation-delay:.4s;}
-  @keyframes blink{0%,80%,100%{opacity:0}40%{opacity:1}}
 
   .alert-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.9rem;margin-top:.9rem;}
   .alert-card{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:1rem;}
@@ -214,7 +199,6 @@ const STYLE = `
 `;
 
 const CATEGORIES = ["냉장","냉동"];
-const RECIPE_TYPES = ["한식","양식","일식","중식","채식","간단요리","다이어트"];
 const CAT_COLORS = {"냉장":"#93d0f5","냉동":"#c4b0f7"};
 const CAT_TEXT   = {"냉장":"#1a6b9a","냉동":"#6040b8"};
 
@@ -282,9 +266,7 @@ export default function FridgeApp() {
   const [tab, setTab] = useState("fridge");
   const [form, setForm] = useState({ name:"", qty:"", unit:"g", category:"냉장", expiry:"" });
   const [selected, setSelected] = useState([]);
-  const [recipeType, setRecipeType] = useState("한식");
-  const [recipe, setRecipe] = useState("");
-  const [loading, setLoading] = useState(false);
+
   const [toast, setToast] = useState(null);
   const [shelfPopup, setShelfPopup] = useState(null);
   const [aiLoadingIds, setAiLoadingIds] = useState(new Set());
@@ -557,22 +539,12 @@ export default function FridgeApp() {
   const deleteItem = id => { persistItems(currentItemsRef.current.filter(i=>i.id!==id)); setSelected(prev=>prev.filter(s=>s!==id)); };
   const toggleSelect = id => setSelected(prev=>prev.includes(id)?prev.filter(s=>s!==id):[...prev,id]);
 
-  const searchRecipe = useCallback(async () => {
+  const searchRecipeOnGoogle = () => {
     const ingredients = selected.length>0 ? items.filter(i=>selected.includes(i.id)).map(i=>i.name) : items.map(i=>i.name);
     if (!ingredients.length) { showToast("❗ 재료를 먼저 추가해주세요"); return; }
-    setLoading(true); setRecipe("");
-    const soonNames = items.filter(i=>{ const d=daysUntil(i.expiry); return d!==null&&d<=5; }).map(i=>i.name);
-    try {
-      const res = await fetch("/api/recipe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ingredients, recipeType, soonNames }),
-      });
-      const data = await res.json();
-      setRecipe(data.text || "레시피를 가져오지 못했습니다.");
-    } catch { setRecipe("⚠️ 네트워크 오류가 발생했습니다."); }
-    finally { setLoading(false); }
-  }, [items, selected, recipeType]);
+    const query = encodeURIComponent(ingredients.join(" ") + " 요리");
+    window.open(`https://www.google.com/search?q=${query}`, "_blank");
+  };
 
   const totalItems = items.length;
   const expiringSoon = items.filter(i=>{ const d=daysUntil(i.expiry); return d!==null&&d>=0&&d<=7; }).length;
@@ -755,7 +727,7 @@ export default function FridgeApp() {
         {/* ── 레시피 탭 ── */}
         {tab==="recipe" && (
           <div className="card">
-            <div className="card-header"><h2 className="card-title">🍳 AI 레시피 추천</h2></div>
+            <div className="card-header"><h2 className="card-title">🍳 레시피 검색</h2></div>
             {selectedItems.length>0 ? (
               <>
                 <p style={{fontSize:".72rem",color:"var(--text2)",fontWeight:700,marginBottom:".5rem"}}>선택된 재료</p>
@@ -765,29 +737,21 @@ export default function FridgeApp() {
               </>
             ) : (
               <p style={{fontSize:".78rem",color:"var(--text2)",fontWeight:600,marginBottom:".75rem"}}>
-                💡 냉장고 탭에서 재료를 체크하면 해당 재료로만 레시피를 검색해요!
+                💡 냉장고 탭에서 재료를 체크하면 해당 재료로만 검색해요. 체크 안 하면 전체 재료로 검색해요!
               </p>
             )}
             <hr className="divider" />
-            <p style={{fontSize:".7rem",color:"var(--text2)",fontWeight:700,marginBottom:".5rem"}}>요리 스타일 선택</p>
-            <div className="recipe-type">
-              {RECIPE_TYPES.map(t=><button key={t} className={`rtype ${recipeType===t?"active":""}`} onClick={()=>setRecipeType(t)}>{t}</button>)}
-            </div>
-            <div className="recipe-controls">
-              <button className="btn btn-mint" onClick={searchRecipe} disabled={loading||items.length===0}>
-                {loading?"찾는 중...":"🔍 레시피 찾기"}
+            <div style={{display:"flex",gap:".6rem",alignItems:"center",flexWrap:"wrap"}}>
+              <button className="btn btn-mint" onClick={searchRecipeOnGoogle} disabled={items.length===0} style={{flex:1,justifyContent:"center",fontSize:".88rem"}}>
+                🔍 구글에서 레시피 검색
               </button>
-              {recipe&&<button className="btn btn-ghost" onClick={()=>setRecipe("")}>초기화</button>}
-              <span style={{fontSize:".72rem",color:"var(--text2)",fontWeight:600,marginLeft:"auto"}}>
+              <span style={{fontSize:".72rem",color:"var(--text2)",fontWeight:600}}>
                 {selectedItems.length>0?`${selectedItems.length}개 선택됨`:`전체 ${items.length}개 사용`}
               </span>
             </div>
-            {loading ? (
-              <div className="recipe-output" style={{display:"flex",alignItems:"center"}}>
-                <div className="thinking"><span>맛있는 레시피 만드는 중</span><span className="dot-anim"><span>.</span><span>.</span><span>.</span></span></div>
-              </div>
-            ) : recipe ? <div className="recipe-output">{recipe}</div>
-              : <div className="recipe-output placeholder">재료를 선택하고 "레시피 찾기"를 눌러주세요 🍽️</div>}
+            <p style={{fontSize:".7rem",color:"var(--text3)",fontWeight:600,marginTop:".65rem"}}>
+              선택한 재료 이름 + "요리"로 구글 검색이 새 창으로 열려요
+            </p>
           </div>
         )}
 
