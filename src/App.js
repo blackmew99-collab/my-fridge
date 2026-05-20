@@ -179,6 +179,16 @@ const STYLE = `
   .hint-bar{font-size:.72rem;color:var(--text2);font-weight:600;margin-top:.9rem;border-top:1.5px dashed var(--border);padding-top:.75rem;}
   .hint-bar strong{color:var(--lav-d);}
 
+  /* ── 자동 이메일 알림 ── */
+  .notify-email-box{background:var(--peach-l);border:1.5px solid var(--peach);border-radius:var(--radius-sm);padding:1rem 1.1rem;margin-bottom:1rem;}
+  .notify-email-title{font-size:.82rem;font-weight:800;color:var(--peach-d);margin-bottom:.45rem;display:flex;align-items:center;gap:.4rem;}
+  .notify-email-desc{font-size:.74rem;color:var(--text2);font-weight:600;margin-bottom:.7rem;line-height:1.55;}
+  .notify-email-row{display:flex;gap:.45rem;}
+  .notify-email-row input{flex:1;background:var(--surface);border:1.5px solid var(--peach);border-radius:var(--radius-sm);color:var(--text);font-family:var(--font);font-size:.84rem;font-weight:600;padding:.5rem .8rem;outline:none;transition:border-color .15s,box-shadow .15s;}
+  .notify-email-row input:focus{box-shadow:0 0 0 3px var(--peach-l);border-color:var(--peach-d);}
+  .notify-email-row input:disabled{opacity:.5;cursor:not-allowed;}
+  .notify-email-status{font-size:.72rem;font-weight:700;color:var(--mint-d);margin-top:.5rem;display:flex;align-items:center;gap:.3rem;}
+
   /* ── 팝업 공통 ── */
   .popup-overlay{position:fixed;inset:0;background:rgba(74,55,40,.38);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem;backdrop-filter:blur(3px);}
   .popup-box{background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);padding:1.5rem;max-width:490px;width:100%;box-shadow:0 16px 48px rgba(180,120,80,.2);}
@@ -580,6 +590,8 @@ export default function FridgeApp() {
   const [aiLoadingIds, setAiLoadingIds] = useState(new Set());
   const [showBarcode, setShowBarcode] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState(null); // null=전체, "냉장", "냉동"
+  const [notifyEmail, setNotifyEmail] = useState(() => localStorage.getItem("notify_email") || "");
+  const [notifyEmailInput, setNotifyEmailInput] = useState(() => localStorage.getItem("notify_email") || "");
 
   // ── PWA 홈 화면 추가 ────────────────────────────────────────────────────────
   const [installPrompt, setInstallPrompt] = useState(null);
@@ -648,6 +660,19 @@ export default function FridgeApp() {
     return unsubscribe;
   }, [roomCode, isShared]);
 
+  // notifyEmail Firebase 실시간 리스너 (공유 모드에서 방 이메일 설정 동기화)
+  useEffect(() => {
+    if (!isShared || !db) return;
+    const emailPath = ref(db, `fridges/${roomCode}/notifyEmail`);
+    const unsubscribe = onValue(emailPath, (snapshot) => {
+      const email = snapshot.val() || "";
+      setNotifyEmail(email);
+      setNotifyEmailInput(email);
+      if (email) localStorage.setItem("notify_email", email);
+    });
+    return unsubscribe;
+  }, [roomCode, isShared]);
+
   const joinRoom = () => {
     const code = roomInput.trim().toLowerCase().replace(/\s+/g, "-");
     if (!code) return;
@@ -667,6 +692,19 @@ export default function FridgeApp() {
   };
 
   const showToast = msg => { setToast(msg); setTimeout(() => setToast(null), 3200); };
+
+  const saveNotifyEmail = () => {
+    const email = notifyEmailInput.trim();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showToast("❗ 올바른 이메일 주소를 입력해주세요"); return;
+    }
+    setNotifyEmail(email);
+    localStorage.setItem("notify_email", email);
+    if (isShared && db) {
+      set(ref(db, `fridges/${roomCode}/notifyEmail`), email || null);
+    }
+    showToast(email ? `📧 "${email}" 로 알림 설정 완료!` : "📧 알림 메일이 해제됐어요");
+  };
 
   const callShelfAI = useCallback(async (itemName, _category) => {
     // 내장 식재료 DB — API 없이 즉시 반환
@@ -1051,6 +1089,29 @@ export default function FridgeApp() {
             <div className="card-header">
               <h2 className="card-title">🔔 소비기한 알림</h2>
               {alertItems.length>0&&<a href={makeMailLink(alertItems)} className="btn btn-peach" style={{textDecoration:"none",fontSize:".72rem"}}>📧 전체 메일 발송</a>}
+            </div>
+
+            {/* 자동 이메일 알림 설정 */}
+            <div className="notify-email-box">
+              <div className="notify-email-title">📬 자동 이메일 알림 설정</div>
+              <div className="notify-email-desc">
+                소비기한 <strong>3일 이내</strong> 재료가 있으면 <strong>매일 오전 9시</strong>에 자동으로 메일을 보내드려요.
+                {!isShared && <span style={{color:"var(--danger-d)"}}><br/>⚠️ 공유 방에 연결된 상태에서만 작동해요.</span>}
+              </div>
+              <div className="notify-email-row">
+                <input
+                  type="email"
+                  value={notifyEmailInput}
+                  onChange={e => setNotifyEmailInput(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && saveNotifyEmail()}
+                  placeholder={isShared ? "알림 받을 이메일 주소" : "공유 방 연결 후 설정 가능해요"}
+                  disabled={!isShared}
+                />
+                <button className="btn btn-peach" onClick={saveNotifyEmail} disabled={!isShared}>저장</button>
+              </div>
+              {notifyEmail && (
+                <div className="notify-email-status">✅ <strong>{notifyEmail}</strong> 로 알림이 설정됐어요</div>
+              )}
             </div>
             {alertItems.length===0 ? (
               <div className="empty"><span className="empty-icon">✨</span>소비기한이 임박한 재료가 없어요!</div>
