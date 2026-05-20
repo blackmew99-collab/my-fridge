@@ -539,11 +539,16 @@ export default function FridgeApp() {
   const deleteItem = id => { persistItems(currentItemsRef.current.filter(i=>i.id!==id)); setSelected(prev=>prev.filter(s=>s!==id)); };
   const toggleSelect = id => setSelected(prev=>prev.includes(id)?prev.filter(s=>s!==id):[...prev,id]);
 
-  const searchRecipeOnGoogle = () => {
+  const searchRecipeOn = (engine) => {
     const ingredients = selected.length>0 ? items.filter(i=>selected.includes(i.id)).map(i=>i.name) : items.map(i=>i.name);
     if (!ingredients.length) { showToast("❗ 재료를 먼저 추가해주세요"); return; }
     const query = encodeURIComponent(ingredients.join(" ") + " 요리");
-    window.open(`https://www.google.com/search?q=${query}`, "_blank");
+    const urls = {
+      google:  `https://www.google.com/search?q=${query}`,
+      youtube: `https://www.youtube.com/results?search_query=${query}`,
+      naver:   `https://search.naver.com/search.naver?query=${query}`,
+    };
+    window.open(urls[engine], "_blank");
   };
 
   const totalItems = items.length;
@@ -741,16 +746,19 @@ export default function FridgeApp() {
               </p>
             )}
             <hr className="divider" />
-            <div style={{display:"flex",gap:".6rem",alignItems:"center",flexWrap:"wrap"}}>
-              <button className="btn btn-mint" onClick={searchRecipeOnGoogle} disabled={items.length===0} style={{flex:1,justifyContent:"center",fontSize:".88rem"}}>
-                🔍 구글에서 레시피 검색
+            <div style={{display:"flex",gap:".5rem",flexWrap:"wrap"}}>
+              <button className="btn btn-mint" onClick={()=>searchRecipeOn("google")} disabled={items.length===0} style={{flex:1,justifyContent:"center"}}>
+                🔍 구글
               </button>
-              <span style={{fontSize:".72rem",color:"var(--text2)",fontWeight:600}}>
-                {selectedItems.length>0?`${selectedItems.length}개 선택됨`:`전체 ${items.length}개 사용`}
-              </span>
+              <button className="btn btn-peach" onClick={()=>searchRecipeOn("youtube")} disabled={items.length===0} style={{flex:1,justifyContent:"center"}}>
+                ▶ 유튜브
+              </button>
+              <button className="btn btn-lav" onClick={()=>searchRecipeOn("naver")} disabled={items.length===0} style={{flex:1,justifyContent:"center"}}>
+                🟢 네이버
+              </button>
             </div>
             <p style={{fontSize:".7rem",color:"var(--text3)",fontWeight:600,marginTop:".65rem"}}>
-              선택한 재료 이름 + "요리"로 구글 검색이 새 창으로 열려요
+              선택한 재료 + "요리" 키워드로 새 창에서 검색해요 · {selectedItems.length>0?`${selectedItems.length}개 선택됨`:`전체 ${items.length}개 사용`}
             </p>
           </div>
         )}
