@@ -187,7 +187,10 @@ const STYLE = `
   .notify-email-row input{flex:1;background:var(--surface);border:1.5px solid var(--peach);border-radius:var(--radius-sm);color:var(--text);font-family:var(--font);font-size:.84rem;font-weight:600;padding:.5rem .8rem;outline:none;transition:border-color .15s,box-shadow .15s;}
   .notify-email-row input:focus{box-shadow:0 0 0 3px var(--peach-l);border-color:var(--peach-d);}
   .notify-email-row input:disabled{opacity:.5;cursor:not-allowed;}
-  .notify-email-status{font-size:.72rem;font-weight:700;color:var(--mint-d);margin-top:.5rem;display:flex;align-items:center;gap:.3rem;}
+  .notify-tag-list{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.6rem;}
+  .notify-tag{background:#fff;border:1.5px solid var(--peach);color:var(--peach-d);border-radius:999px;font-size:.72rem;font-weight:700;padding:.22rem .55rem .22rem .7rem;display:flex;align-items:center;gap:.3rem;}
+  .notify-tag button{background:none;border:none;color:var(--peach-d);cursor:pointer;font-size:.85rem;padding:0;line-height:1;opacity:.7;}
+  .notify-tag button:hover{opacity:1;}
 
   /* ── 팝업 공통 ── */
   .popup-overlay{position:fixed;inset:0;background:rgba(74,55,40,.38);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem;backdrop-filter:blur(3px);}
@@ -590,8 +593,11 @@ export default function FridgeApp() {
   const [aiLoadingIds, setAiLoadingIds] = useState(new Set());
   const [showBarcode, setShowBarcode] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState(null); // null=전체, "냉장", "냉동"
-  const [notifyEmail, setNotifyEmail] = useState(() => localStorage.getItem("notify_email") || "");
-  const [notifyEmailInput, setNotifyEmailInput] = useState(() => localStorage.getItem("notify_email") || "");
+  const [notifyEmails, setNotifyEmails] = useState(() => {
+    const saved = localStorage.getItem("notify_email") || "";
+    return saved ? saved.split(",").filter(Boolean) : [];
+  });
+  const [notifyEmailInput, setNotifyEmailInput] = useState("");
 
   // ── PWA 홈 화면 추가 ────────────────────────────────────────────────────────
   const [installPrompt, setInstallPrompt] = useState(null);
@@ -665,10 +671,10 @@ export default function FridgeApp() {
     if (!isShared || !db) return;
     const emailPath = ref(db, `fridges/${roomCode}/notifyEmail`);
     const unsubscribe = onValue(emailPath, (snapshot) => {
-      const email = snapshot.val() || "";
-      setNotifyEmail(email);
-      setNotifyEmailInput(email);
-      if (email) localStorage.setItem("notify_email", email);
+      const val = snapshot.val() || "";
+      const emails = val ? val.split(",").filter(Boolean) : [];
+      setNotifyEmails(emails);
+      localStorage.setItem("notify_email", val);
     });
     return unsubscribe;
   }, [roomCode, isShared]);
@@ -693,17 +699,31 @@ export default function FridgeApp() {
 
   const showToast = msg => { setToast(msg); setTimeout(() => setToast(null), 3200); };
 
-  const saveNotifyEmail = () => {
+  const addNotifyEmail = () => {
     const email = notifyEmailInput.trim();
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!email) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       showToast("❗ 올바른 이메일 주소를 입력해주세요"); return;
     }
-    setNotifyEmail(email);
-    localStorage.setItem("notify_email", email);
-    if (isShared && db) {
-      set(ref(db, `fridges/${roomCode}/notifyEmail`), email || null);
+    if (notifyEmails.includes(email)) {
+      showToast("❗ 이미 등록된 이메일이에요"); return;
     }
-    showToast(email ? `📧 "${email}" 로 알림 설정 완료!` : "📧 알림 메일이 해제됐어요");
+    const newEmails = [...notifyEmails, email];
+    setNotifyEmails(newEmails);
+    setNotifyEmailInput("");
+    const joined = newEmails.join(",");
+    localStorage.setItem("notify_email", joined);
+    if (isShared && db) set(ref(db, `fridges/${roomCode}/notifyEmail`), joined);
+    showToast(`📧 "${email}" 추가됐어요!`);
+  };
+
+  const removeNotifyEmail = (email) => {
+    const newEmails = notifyEmails.filter(e => e !== email);
+    setNotifyEmails(newEmails);
+    const joined = newEmails.join(",");
+    localStorage.setItem("notify_email", joined);
+    if (isShared && db) set(ref(db, `fridges/${roomCode}/notifyEmail`), joined || null);
+    showToast(`📧 "${email}" 제거됐어요`);
   };
 
   const callShelfAI = useCallback(async (itemName, _category) => {
@@ -1095,7 +1115,7 @@ export default function FridgeApp() {
             <div className="notify-email-box">
               <div className="notify-email-title">📬 자동 이메일 알림 설정</div>
               <div className="notify-email-desc">
-                소비기한 <strong>3일 이내</strong> 재료가 있으면 <strong>매일 오전 9시</strong>에 자동으로 메일을 보내드려요.
+                소비기한 <strong>3일 이내</strong> 재료가 있으면 <strong>매일 오전 9시</strong>에 등록된 모든 주소로 자동 발송돼요.
                 {!isShared && <span style={{color:"var(--danger-d)"}}><br/>⚠️ 공유 방에 연결된 상태에서만 작동해요.</span>}
               </div>
               <div className="notify-email-row">
@@ -1103,14 +1123,21 @@ export default function FridgeApp() {
                   type="email"
                   value={notifyEmailInput}
                   onChange={e => setNotifyEmailInput(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && saveNotifyEmail()}
-                  placeholder={isShared ? "알림 받을 이메일 주소" : "공유 방 연결 후 설정 가능해요"}
+                  onKeyDown={e => e.key === "Enter" && addNotifyEmail()}
+                  placeholder={isShared ? "추가할 이메일 주소 입력" : "공유 방 연결 후 설정 가능해요"}
                   disabled={!isShared}
                 />
-                <button className="btn btn-peach" onClick={saveNotifyEmail} disabled={!isShared}>저장</button>
+                <button className="btn btn-peach" onClick={addNotifyEmail} disabled={!isShared || !notifyEmailInput.trim()}>+ 추가</button>
               </div>
-              {notifyEmail && (
-                <div className="notify-email-status">✅ <strong>{notifyEmail}</strong> 로 알림이 설정됐어요</div>
+              {notifyEmails.length > 0 && (
+                <div className="notify-tag-list">
+                  {notifyEmails.map(email => (
+                    <span key={email} className="notify-tag">
+                      ✉️ {email}
+                      <button onClick={() => removeNotifyEmail(email)} title="제거">✕</button>
+                    </span>
+                  ))}
+                </div>
               )}
             </div>
             {alertItems.length===0 ? (
