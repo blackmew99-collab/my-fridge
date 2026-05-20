@@ -280,8 +280,8 @@ async function lookupBarcode(barcode) {
 
 // ── 바코드 팝업 ────────────────────────────────────────────────────────────
 function BarcodePopup({ onClose, onAdd }) {
-  const [mode, setMode] = useState("camera"); // "camera" | "manual"
   const [hasBarcodeAPI] = useState(() => "BarcodeDetector" in window);
+  const [mode, setMode] = useState(() => "BarcodeDetector" in window ? "camera" : "manual");
   const [cameraState, setCameraState] = useState("idle"); // idle | requesting | active | error
   const [cameraError, setCameraError] = useState("");
   const [manualCode, setManualCode] = useState("");
@@ -289,7 +289,7 @@ function BarcodePopup({ onClose, onAdd }) {
   const [result, setResult] = useState(null);   // { name, category, brand, quantity }
   const [notFound, setNotFound] = useState(false);
   const [scanned, setScanned] = useState("");   // last scanned barcode string
-  const [editForm, setEditForm] = useState({ qty: "", unit: "개", category: "냉장", expiry: "" });
+  const [editForm, setEditForm] = useState({ name: "", qty: "", unit: "개", category: "냉장", expiry: "" });
 
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -360,7 +360,7 @@ function BarcodePopup({ onClose, onAdd }) {
       const found = await lookupBarcode(code);
       if (found) {
         setResult(found);
-        setEditForm(p => ({ ...p, category: found.category }));
+        setEditForm(p => ({ ...p, name: found.name, category: found.category }));
       } else {
         setNotFound(true);
       }
@@ -379,11 +379,17 @@ function BarcodePopup({ onClose, onAdd }) {
 
   const handleAdd = () => {
     if (!result) return;
-    onAdd({ name: result.name, ...editForm });
+    onAdd({ ...editForm, name: editForm.name.trim() || result.name });
     onClose();
   };
 
-  const resetResult = () => { setResult(null); setNotFound(false); setScanned(""); setManualCode(""); };
+  const handleAddManual = () => {
+    if (!editForm.name.trim()) return;
+    onAdd({ ...editForm, name: editForm.name.trim() });
+    onClose();
+  };
+
+  const resetResult = () => { setResult(null); setNotFound(false); setScanned(""); setManualCode(""); setEditForm(p => ({...p, name:""})); };
 
   return (
     <div className="popup-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -418,9 +424,8 @@ function BarcodePopup({ onClose, onAdd }) {
           <>
             {!hasBarcodeAPI ? (
               <div style={{background:"var(--warn-l)",border:"1.5px solid var(--warn)",borderRadius:"var(--radius-sm)",padding:".9rem 1rem",fontSize:".8rem",color:"var(--warn-d)",fontWeight:700,marginBottom:".9rem"}}>
-                ⚠️ 이 브라우저는 카메라 바코드 스캔을 지원하지 않아요.<br/>
-                <span style={{fontWeight:600}}>Chrome 또는 Edge 최신 버전에서 사용해주세요.</span><br/>
-                아래 "번호 직접 입력" 탭을 이용해주세요!
+                ⚠️ 이 브라우저(iOS Safari·Firefox 등)는 카메라 바코드 인식을 지원하지 않아요.<br/>
+                <span style={{fontWeight:600}}>👉 "번호 직접 입력" 탭에서 바코드 번호를 입력하거나, Android Chrome을 이용해주세요.</span>
               </div>
             ) : (
               <>
@@ -476,8 +481,18 @@ function BarcodePopup({ onClose, onAdd }) {
         {!looking && notFound && (
           <>
             <div className="bc-not-found">
-              🔍 바코드 <strong>{scanned}</strong> 에 해당하는 제품을 찾지 못했어요.<br/>
-              <span style={{fontWeight:600}}>국내 전용 제품이거나 DB에 등록되지 않았을 수 있어요.</span>
+              🔍 바코드 <strong>{scanned}</strong> 제품을 DB에서 찾지 못했어요.<br/>
+              <span style={{fontWeight:600}}>아래에 제품명을 직접 입력해서 추가하세요!</span>
+            </div>
+            <div className="bc-manual-row" style={{marginBottom:".5rem"}}>
+              <input
+                value={editForm.name}
+                onChange={e => setEditForm(p => ({...p, name: e.target.value}))}
+                onKeyDown={e => e.key === "Enter" && handleAddManual()}
+                placeholder="제품명 직접 입력 (예: 신라면)"
+                autoFocus
+              />
+              <button className="btn btn-mint" onClick={handleAddManual} disabled={!editForm.name.trim()}>+ 추가</button>
             </div>
             <button className="btn btn-ghost" style={{fontSize:".75rem"}} onClick={resetResult}>↩ 다시 시도</button>
           </>
@@ -487,12 +502,15 @@ function BarcodePopup({ onClose, onAdd }) {
         {!looking && result && (
           <>
             <div className="bc-result">
-              <div className="bc-result-name">🎉 {result.name}</div>
-              <div className="bc-result-meta">
+              <div className="bc-result-meta" style={{marginBottom:".5rem"}}>
                 {result.brand && `브랜드: ${result.brand}`}{result.brand && result.quantity && " · "}{result.quantity && `${result.quantity}`}
                 {scanned && ` · 바코드: ${scanned}`}
               </div>
               <div className="bc-result-fields">
+                <div className="bc-field" style={{gridColumn:"1/-1"}}>
+                  <label>제품명 (수정 가능)</label>
+                  <input value={editForm.name} onChange={e=>setEditForm(p=>({...p,name:e.target.value}))} />
+                </div>
                 <div className="bc-field">
                   <label>수량</label>
                   <div style={{display:"flex",gap:".3rem"}}>
