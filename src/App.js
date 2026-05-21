@@ -104,6 +104,15 @@ const STYLE = `
   .btn-ai:disabled{opacity:.4;cursor:not-allowed;}
   .btn-ai-sm{font-size:.63rem;padding:.22rem .55rem;border-radius:8px;}
 
+  /* ── 쇼핑 목록 ── */
+  .shop-form{display:grid;grid-template-columns:1fr auto auto auto;gap:.5rem;align-items:end;margin-bottom:.9rem;}
+  @media(max-width:520px){.shop-form{grid-template-columns:1fr 1fr;}.shop-form .btn-add-shop{grid-column:1/-1;}}
+  .shop-item{display:flex;align-items:center;gap:.6rem;padding:.55rem .8rem;background:var(--surface2);border-radius:var(--radius-sm);border:1.5px solid var(--border);transition:all .15s;}
+  .shop-item:hover{border-color:var(--pink);box-shadow:var(--shadow-sm);}
+  .shop-item.done{opacity:.55;background:var(--surface);}
+  .shop-item-name{flex:1;font-weight:700;font-size:.88rem;}
+  .shop-item-name.done{text-decoration:line-through;color:var(--text2);}
+
   .cat-filter{display:flex;gap:.4rem;flex-wrap:wrap;}
   .cat-filter-btn{padding:.32rem .85rem;border-radius:999px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text2);font-family:var(--font);font-size:.74rem;font-weight:700;cursor:pointer;transition:all .15s;}
   .cat-filter-btn:hover{border-color:var(--sky);color:var(--sky-d);}
@@ -271,6 +280,9 @@ export default function FridgeApp() {
   const [shelfPopup, setShelfPopup] = useState(null);
   const [aiLoadingIds, setAiLoadingIds] = useState(new Set());
   const [categoryFilter, setCategoryFilter] = useState(null); // null=전체, "냉장", "냉동"
+  const [shoppingList, setShoppingList] = useState(() => { try { return JSON.parse(localStorage.getItem("shop_items")||"[]"); } catch { return []; } });
+  const [shopForm, setShopForm] = useState({ name:"", qty:"", unit:"개" });
+  const currentShopRef = useRef(shoppingList);
   const [notifyEmails, setNotifyEmails] = useState(() => {
     const saved = localStorage.getItem("notify_email") || "";
     return saved ? saved.split(",").filter(Boolean) : [];
@@ -310,6 +322,28 @@ export default function FridgeApp() {
   // refs 최신값 유지
   useEffect(() => { currentItemsRef.current = items; }, [items]);
   useEffect(() => { isSharedRef.current = isShared; roomCodeRef.current = roomCode; }, [isShared, roomCode]);
+
+  // shoppingList ref 최신화 + localStorage 동기화
+  useEffect(() => { currentShopRef.current = shoppingList; }, [shoppingList]);
+  useEffect(() => { localStorage.setItem("shop_items", JSON.stringify(shoppingList)); }, [shoppingList]);
+
+  // shoppingList Firebase 리스너
+  useEffect(() => {
+    if (!isShared || !db) return;
+    let isFirst = true;
+    const shopPath = ref(db, `fridges/${roomCode}/shoppingList`);
+    const unsubscribe = onValue(shopPath, (snapshot) => {
+      const data = snapshot.val();
+      if (isFirst && data === null) {
+        const cur = currentShopRef.current;
+        if (cur.length > 0) set(shopPath, cur);
+      } else {
+        setShoppingList(data ? (Array.isArray(data) ? data : Object.values(data)) : []);
+      }
+      isFirst = false;
+    });
+    return unsubscribe;
+  }, [roomCode, isShared]);
 
   // items 변경 시 localStorage 항상 동기화 (공유 모드에서도 로컬 백업)
   useEffect(() => {
@@ -537,6 +571,32 @@ export default function FridgeApp() {
   };
 
   const deleteItem = id => { persistItems(currentItemsRef.current.filter(i=>i.id!==id)); setSelected(prev=>prev.filter(s=>s!==id)); };
+
+  // ── 쇼핑 목록 함수 ────────────────────────────────────────────────────────
+  const persistShop = useCallback((newList) => {
+    setShoppingList(newList);
+    if (isSharedRef.current) set(ref(db, `fridges/${roomCodeRef.current}/shoppingList`), newList.length ? newList : null);
+  }, []);
+
+  const addShopItem = () => {
+    if (!shopForm.name.trim()) return;
+    const newItem = { id: Date.now(), name: shopForm.name.trim(), qty: shopForm.qty, unit: shopForm.unit, done: false };
+    persistShop([...currentShopRef.current, newItem]);
+    setShopForm(p => ({ ...p, name:"", qty:"" }));
+  };
+
+  const deleteShopItem = id => persistShop(currentShopRef.current.filter(i => i.id !== id));
+
+  const toggleShopDone = id => persistShop(currentShopRef.current.map(i => i.id===id ? {...i, done:!i.done} : i));
+
+  const moveCheckedToFridge = () => {
+    const checked = currentShopRef.current.filter(i => i.done);
+    if (!checked.length) return;
+    const newFridgeItems = checked.map(i => ({ id: Date.now() + Math.random(), name: i.name, qty: i.qty, unit: i.unit, category:"냉장", expiry:"" }));
+    persistItems([...newFridgeItems, ...currentItemsRef.current]);
+    persistShop(currentShopRef.current.filter(i => !i.done));
+    showToast(`🧊 ${checked.length}개 재료를 냉장고에 추가했어요!`);
+  };
   const toggleSelect = id => setSelected(prev=>prev.includes(id)?prev.filter(s=>s!==id):[...prev,id]);
 
   const searchRecipeOn = (engine) => {
@@ -640,6 +700,54 @@ export default function FridgeApp() {
         {/* ── 냉장고 탭 ── */}
         {tab==="fridge" && (
           <>
+            {/* 쇼핑 목록 카드 */}
+            <div className="card">
+              <div className="card-header">
+                <h2 className="card-title">🛍️ 쇼핑 목록</h2>
+                {shoppingList.filter(i=>i.done).length>0 && (
+                  <button className="btn btn-mint" style={{fontSize:".72rem"}} onClick={moveCheckedToFridge}>
+                    🧊 냉장고에 추가
+                  </button>
+                )}
+              </div>
+              <div className="shop-form">
+                <div className="field">
+                  <label>재료명</label>
+                  <input value={shopForm.name} onChange={e=>setShopForm(p=>({...p,name:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&addShopItem()} placeholder="예: 두부, 계란" />
+                </div>
+                <div className="field">
+                  <label>수량</label>
+                  <input value={shopForm.qty} onChange={e=>setShopForm(p=>({...p,qty:e.target.value}))} placeholder="1" style={{width:"58px"}} />
+                </div>
+                <div className="field">
+                  <label>단위</label>
+                  <select value={shopForm.unit} onChange={e=>setShopForm(p=>({...p,unit:e.target.value}))} style={{width:"62px"}}>
+                    {["개","g","kg","ml","L","봉","팩","줌"].map(u=><option key={u}>{u}</option>)}
+                  </select>
+                </div>
+                <button className="btn btn-pink btn-add-shop" onClick={addShopItem} style={{alignSelf:"flex-end"}}>+ 추가</button>
+              </div>
+              {shoppingList.length===0 ? (
+                <div className="empty" style={{padding:"1.2rem 0"}}><span className="empty-icon" style={{fontSize:"1.8rem"}}>🛍️</span>살 재료를 추가해봐요!</div>
+              ) : (
+                <div className="item-list">
+                  {shoppingList.map(item=>(
+                    <div key={item.id} className={`shop-item${item.done?" done":""}`}>
+                      <input type="checkbox" className="item-check" checked={!!item.done} onChange={()=>toggleShopDone(item.id)} />
+                      <span className={`shop-item-name${item.done?" done":""}`}>{item.name}</span>
+                      {item.qty&&<span className="item-qty">{item.qty}{item.unit}</span>}
+                      <button className="item-del" onClick={()=>deleteShopItem(item.id)}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {shoppingList.filter(i=>i.done).length>0&&(
+                <p style={{fontSize:".7rem",color:"var(--text2)",fontWeight:600,marginTop:".75rem"}}>
+                  ✅ 체크한 항목을 <strong style={{color:"var(--mint-d)"}}>냉장고에 추가</strong>하면 재료 목록으로 이동해요
+                </p>
+              )}
+            </div>
+
             <div className="card">
               <div className="card-header">
                 <h2 className="card-title">🛒 재료 추가하기</h2>
