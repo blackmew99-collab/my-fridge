@@ -1,4 +1,4 @@
-const nodemailer = require("nodemailer");
+import nodemailer from "nodemailer";
 
 function daysUntil(d) {
   if (!d) return null;
@@ -63,6 +63,9 @@ export default async function handler(req, res) {
   try {
     // Firebase에서 전체 방 데이터 읽기
     const fbRes = await fetch(`${DB_URL}/fridges.json`);
+    if (!fbRes.ok) {
+      return res.status(500).json({ error: `Firebase 읽기 실패: ${fbRes.status}` });
+    }
     const fridges = await fbRes.json();
     if (!fridges) return res.status(200).json({ message: "데이터 없음" });
 
@@ -85,7 +88,7 @@ export default async function handler(req, res) {
       const items = Array.isArray(rawItems) ? rawItems : Object.values(rawItems);
       const expiring = items.filter(item => {
         const days = daysUntil(item.expiry);
-        return days !== null && days >= 0 && days <= 3;
+        return days !== null && days <= 3; // 만료된 것 포함, 3일 이내 모두 알림
       });
 
       if (!expiring.length) continue;
