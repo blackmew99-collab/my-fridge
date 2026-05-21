@@ -694,7 +694,13 @@ export default function FridgeApp() {
                 <div className="empty"><span className="empty-icon">🥬</span>재료를 추가해봐요!</div>
               ) : (
                 <div className="item-list">
-                  {items.filter(item=>!categoryFilter||item.category===categoryFilter).map(item=>{
+                  {items.filter(item=>!categoryFilter||item.category===categoryFilter).sort((a,b)=>{
+                    const da=daysUntil(a.expiry), db=daysUntil(b.expiry);
+                    if(da===null&&db===null)return 0;
+                    if(da===null)return 1;  // 기한 미설정은 맨 뒤
+                    if(db===null)return -1;
+                    return da-db;           // 짧은 순
+                  }).map(item=>{
                     const days=daysUntil(item.expiry);
                     const isSelected=selected.includes(item.id);
                     const isAiLoading=aiLoadingIds.has(item.id);
