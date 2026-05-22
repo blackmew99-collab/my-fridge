@@ -2,47 +2,54 @@
   <!-- 배경: 파스텔 핑크 -->
   <rect width="512" height="512" rx="115" fill="#fde8f2"/>
 
-  <!-- 냉장고 그림자 -->
-  <rect x="132" y="82" width="256" height="364" rx="52" fill="#a8d4f0" opacity="0.3"/>
+  <!-- ── 냉장고 내부 (크림 베이지) ── -->
+  <rect x="88" y="52" width="258" height="402" rx="22" fill="#fff6d6"/>
 
-  <!-- 냉장고 본체 전체 -->
-  <rect x="124" y="72" width="256" height="364" rx="52" fill="#daeef9" stroke="#a8d4f0" stroke-width="5"/>
+  <!-- 선반 1 -->
+  <rect x="88" y="198" width="258" height="16" fill="#1a1a1a"/>
+  <!-- 선반 2 -->
+  <rect x="88" y="314" width="258" height="16" fill="#1a1a1a"/>
 
-  <!-- 냉동칸 (상단, 약 40%) -->
-  <rect x="124" y="72" width="256" height="152" rx="52" fill="#eaf6fd" stroke="#a8d4f0" stroke-width="5"/>
-  <!-- 냉동칸 하단 직선 처리 -->
-  <rect x="124" y="192" width="256" height="18" fill="#eaf6fd"/>
-  <!-- 구분선 -->
-  <rect x="140" y="206" width="224" height="6" rx="3" fill="#a8d4f0" opacity="0.7"/>
+  <!-- ── 칸 1: 틸 그릇 ── -->
+  <!-- 그릇 (위가 넓은 반원) -->
+  <ellipse cx="222" cy="162" rx="62" ry="22" fill="#2ec4a0"/>
+  <path d="M160 162 Q160 128 222 128 Q284 128 284 162 Z" fill="#3dd4b0" stroke="#1a1a1a" stroke-width="9" stroke-linejoin="round"/>
+  <ellipse cx="222" cy="162" rx="62" ry="22" fill="#2ec4a0" stroke="#1a1a1a" stroke-width="9"/>
 
-  <!-- 냉동칸 손잡이 (둥글고 귀엽게) -->
-  <rect x="206" y="118" width="100" height="20" rx="10" fill="#7bbde0"/>
-  <rect x="214" y="121" width="48" height="7" rx="4" fill="#ffffff" opacity="0.55"/>
+  <!-- ── 칸 2: 파란 병 ── -->
+  <!-- 병 몸통 -->
+  <rect x="204" y="232" width="40" height="66" rx="12" fill="#72c6f0" stroke="#1a1a1a" stroke-width="9"/>
+  <!-- 병 목 -->
+  <rect x="215" y="215" width="18" height="24" rx="6" fill="#72c6f0" stroke="#1a1a1a" stroke-width="9"/>
+  <!-- 병 뚜껑 -->
+  <rect x="215" y="207" width="18" height="12" rx="5" fill="#1a1a1a"/>
 
-  <!-- 냉동칸 눈결정 (동그란 느낌) -->
-  <circle cx="178" cy="162" r="18" fill="#c2e4f5" opacity="0.8"/>
-  <line x1="178" y1="150" x2="178" y2="174" stroke="#7bbde0" stroke-width="4" stroke-linecap="round"/>
-  <line x1="166" y1="156" x2="190" y2="168" stroke="#7bbde0" stroke-width="4" stroke-linecap="round"/>
-  <line x1="190" y1="156" x2="166" y2="168" stroke="#7bbde0" stroke-width="4" stroke-linecap="round"/>
+  <!-- ── 칸 3: 오렌지 접시 + 파란 병 ── -->
+  <!-- 오렌지 원형 접시 -->
+  <circle cx="155" cy="362" r="42" fill="#f07830" stroke="#1a1a1a" stroke-width="9"/>
+  <circle cx="155" cy="362" r="28" fill="#f89040" opacity="0.5"/>
+  <!-- 작은 파란 병 -->
+  <rect x="225" y="334" width="32" height="54" rx="10" fill="#72c6f0" stroke="#1a1a1a" stroke-width="8"/>
+  <rect x="234" y="320" width="14" height="20" rx="5" fill="#72c6f0" stroke="#1a1a1a" stroke-width="8"/>
+  <rect x="234" y="313" width="14" height="11" rx="4" fill="#1a1a1a"/>
 
-  <!-- 냉장칸 손잡이 -->
-  <rect x="206" y="306" width="100" height="20" rx="10" fill="#7bbde0"/>
-  <rect x="214" y="309" width="48" height="7" rx="4" fill="#ffffff" opacity="0.55"/>
+  <!-- ── 냉장고 본체 외곽선 ── -->
+  <rect x="88" y="52" width="258" height="402" rx="22" fill="none" stroke="#1a1a1a" stroke-width="13"/>
 
-  <!-- 냉장칸 내부 선반 -->
-  <rect x="148" y="364" width="208" height="6" rx="3" fill="#a8d4f0" opacity="0.5"/>
+  <!-- ── 문 (오른쪽으로 열린) ── -->
+  <rect x="344" y="62" width="72" height="372" rx="18" fill="#cccccc" stroke="#1a1a1a" stroke-width="11"/>
+  <!-- 문 안쪽 패널 느낌 -->
+  <rect x="354" y="80" width="52" height="335" rx="10" fill="#d8d8d8"/>
 
-  <!-- 냉장칸 귀여운 장식 (동그란 과일들) -->
-  <circle cx="178" cy="348" r="16" fill="#b5e0f7" opacity="0.9"/>
-  <circle cx="212" cy="340" r="12" fill="#ffe0b2" opacity="0.85"/>
-  <circle cx="200" cy="358" r="10" fill="#c8f5c8" opacity="0.85"/>
+  <!-- 경첩 위 -->
+  <rect x="332" y="82" width="22" height="20" rx="5" fill="#999" stroke="#1a1a1a" stroke-width="7"/>
+  <!-- 경첩 아래 -->
+  <rect x="332" y="400" width="22" height="20" rx="5" fill="#999" stroke="#1a1a1a" stroke-width="7"/>
 
-  <!-- 냉장고 하단 받침대 -->
-  <rect x="174" y="428" width="160" height="18" rx="9" fill="#a8d4f0" opacity="0.6"/>
+  <!-- 문 손잡이 (파란 원형) -->
+  <circle cx="360" cy="248" r="22" fill="#5ab4f0" stroke="#1a1a1a" stroke-width="9"/>
 
-  <!-- 본체 왼쪽 하이라이트 (귀여운 광택) -->
-  <rect x="136" y="96" width="10" height="300" rx="5" fill="#ffffff" opacity="0.45"/>
-
-  <!-- 상단 하이라이트 -->
-  <ellipse cx="252" cy="90" rx="70" ry="10" fill="#ffffff" opacity="0.3"/>
+  <!-- ── 냉장고 발 ── -->
+  <rect x="118" y="452" width="34" height="16" rx="7" fill="#aaa" stroke="#1a1a1a" stroke-width="6"/>
+  <rect x="282" y="452" width="34" height="16" rx="7" fill="#aaa" stroke="#1a1a1a" stroke-width="6"/>
 </svg>
