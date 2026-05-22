@@ -74,7 +74,11 @@ const STYLE = `
   .tab.active.t-recipe{background:var(--mint);}
   .tab.active.t-alert{background:var(--peach);}
   .badge{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;background:var(--danger-d);color:#fff;font-size:.6rem;font-weight:800;}
-  .tab-badge{position:absolute;top:4px;right:6px;display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;background:var(--danger-d);color:#fff;font-size:.6rem;font-weight:800;}
+  .tab-badge{display:inline-flex;align-items:center;justify-content:center;min-width:15px;height:15px;border-radius:999px;background:var(--danger-d);color:#fff;font-size:.55rem;font-weight:800;padding:0 3px;margin-left:.2rem;flex-shrink:0;}
+  @media(max-width:480px){
+    .tabs{gap:.25rem;padding:.25rem;}
+    .tab{padding:.5rem .35rem;font-size:.75rem;gap:.2rem;min-width:0;}
+  }
 
   .card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:1.25rem 1.4rem;margin-bottom:1rem;box-shadow:var(--shadow-sm);}
   .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;gap:.5rem;flex-wrap:wrap;}
@@ -708,9 +712,8 @@ export default function FridgeApp() {
         <div className="tabs">
           <button className={`tab ${tab==="fridge"?"active":""}`} onClick={()=>setTab("fridge")}>🥬 냉장고</button>
           <button className={`tab t-recipe ${tab==="recipe"?"active":""}`} onClick={()=>setTab("recipe")}>🍳 레시피</button>
-          <button className={`tab t-alert ${tab==="alert"?"active":""}`} style={{position:"relative"}} onClick={()=>setTab("alert")}>
-            🔔 소비기한
-            {alertItems.length>0&&<span className="tab-badge">{alertItems.length}</span>}
+          <button className={`tab t-alert ${tab==="alert"?"active":""}`} onClick={()=>setTab("alert")}>
+            🔔 소비기한{alertItems.length>0&&<span className="tab-badge">{alertItems.length}</span>}
           </button>
         </div>
 
