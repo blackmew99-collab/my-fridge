@@ -706,18 +706,9 @@ export default function FridgeApp() {
 
         <div className="tabs">
           <button className={`tab ${tab==="fridge"?"active":""}`} onClick={()=>setTab("fridge")}>🥬 냉장고</button>
-          <button className={`tab t-recipe ${tab==="recipe"?"active":""}`} onClick={()=>setTab("recipe")}>
-            <span style={{display:"flex",alignItems:"flex-start",gap:".28rem"}}>
-              <span>🍳</span>
-              <span style={{textAlign:"left",lineHeight:1.4,wordBreak:"keep-all"}}>레시피<br/>찾기</span>
-            </span>
-          </button>
+          <button className={`tab t-recipe ${tab==="recipe"?"active":""}`} onClick={()=>setTab("recipe")}>🍳 레시피</button>
           <button className={`tab t-alert ${tab==="alert"?"active":""}`} onClick={()=>setTab("alert")}>
-            <span style={{display:"flex",alignItems:"flex-start",gap:".28rem"}}>
-              <span>🔔</span>
-              <span style={{textAlign:"left",lineHeight:1.4,wordBreak:"keep-all",whiteSpace:"nowrap"}}>소비기한<br/>알림</span>
-            </span>
-            {alertItems.length>0&&<span className="badge">{alertItems.length}</span>}
+            🔔 소비기한{alertItems.length>0&&<span className="badge">{alertItems.length}</span>}
           </button>
         </div>
 
