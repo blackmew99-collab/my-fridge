@@ -1,34 +1,46 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- 배경: 파스텔 민트 라운드 사각형 -->
-  <rect width="512" height="512" rx="110" fill="#d4f0e8"/>
+  <!-- 배경: 파스텔 핑크 라운드 사각형 -->
+  <rect width="512" height="512" rx="110" fill="#fde8f2"/>
+
+  <!-- 냉장고 본체 그림자 -->
+  <rect x="128" y="74" width="260" height="374" rx="30" fill="#f0b8d4" opacity="0.4"/>
 
   <!-- 냉장고 본체 -->
-  <rect x="120" y="60" width="272" height="392" rx="28" fill="#ffffff" stroke="#b2ddd0" stroke-width="6"/>
+  <rect x="122" y="68" width="260" height="374" rx="30" fill="#fff8fb" stroke="#f9a8c9" stroke-width="5"/>
 
-  <!-- 냉동칸 (상단) -->
-  <rect x="120" y="60" width="272" height="148" rx="28" fill="#e8f7f3" stroke="#b2ddd0" stroke-width="6"/>
-  <!-- 냉동칸 하단 경계선 (직선으로 자연스럽게) -->
-  <rect x="120" y="176" width="272" height="12" fill="#b2ddd0"/>
-
-  <!-- 냉장칸 (하단) -->
-  <rect x="120" y="188" width="272" height="264" rx="0" fill="#f7fdfc"/>
-  <rect x="120" y="424" width="272" height="28" rx="28" fill="#f7fdfc" stroke="#b2ddd0" stroke-width="0"/>
+  <!-- 냉동칸 (상단) 배경 -->
+  <rect x="122" y="68" width="260" height="145" rx="30" fill="#fef0f7" stroke="#f9a8c9" stroke-width="5"/>
+  <!-- 냉동칸 하단 직선 처리 -->
+  <rect x="122" y="178" width="260" height="16" fill="#fef0f7"/>
+  <rect x="122" y="188" width="260" height="6" fill="#f9a8c9" opacity="0.6"/>
 
   <!-- 냉동칸 손잡이 -->
-  <rect x="220" y="108" width="72" height="14" rx="7" fill="#8ecfc2"/>
+  <rect x="214" y="110" width="88" height="16" rx="8" fill="#f9a8c9"/>
+  <!-- 손잡이 광택 -->
+  <rect x="222" y="113" width="40" height="5" rx="3" fill="#ffffff" opacity="0.6"/>
+
+  <!-- 냉동칸 눈결정 아이콘 (단순 도형) -->
+  <line x1="175" y1="148" x2="175" y2="172" stroke="#f9a8c9" stroke-width="5" stroke-linecap="round"/>
+  <line x1="163" y1="154" x2="187" y2="166" stroke="#f9a8c9" stroke-width="5" stroke-linecap="round"/>
+  <line x1="187" y1="154" x2="163" y2="166" stroke="#f9a8c9" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="175" cy="160" r="5" fill="#f9a8c9"/>
 
   <!-- 냉장칸 손잡이 -->
-  <rect x="220" y="288" width="72" height="14" rx="7" fill="#8ecfc2"/>
+  <rect x="214" y="296" width="88" height="16" rx="8" fill="#f9a8c9"/>
+  <!-- 손잡이 광택 -->
+  <rect x="222" y="299" width="40" height="5" rx="3" fill="#ffffff" opacity="0.6"/>
 
-  <!-- 냉동칸 온도 표시 (작은 눈결정) -->
-  <text x="175" y="155" font-size="36" text-anchor="middle" fill="#a0d8cc">❄</text>
+  <!-- 냉장칸 내부 선반 선 -->
+  <line x1="148" y1="358" x2="366" y2="358" stroke="#f9a8c9" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
 
-  <!-- 냉장칸 야채/과일 표시 -->
-  <text x="175" y="335" font-size="36" text-anchor="middle" fill="#b5e8c8">🥕</text>
+  <!-- 냉장칸 작은 원형 장식 (과일/야채 느낌) -->
+  <circle cx="175" cy="340" r="14" fill="#ffb3c6" opacity="0.7"/>
+  <circle cx="205" cy="332" r="10" fill="#a8e6cf" opacity="0.7"/>
+  <circle cx="195" cy="350" r="8"  fill="#ffd3a5" opacity="0.7"/>
 
-  <!-- 하단 받침대 -->
-  <rect x="150" y="444" width="212" height="20" rx="10" fill="#c5e8df"/>
+  <!-- 냉장고 하단 받침대 -->
+  <rect x="170" y="434" width="176" height="18" rx="9" fill="#f9a8c9" opacity="0.5"/>
 
-  <!-- 왼쪽 테두리 강조 -->
-  <rect x="120" y="60" width="6" height="392" rx="3" fill="#b2ddd0" opacity="0.5"/>
+  <!-- 본체 왼쪽 하이라이트 -->
+  <rect x="130" y="88" width="8" height="320" rx="4" fill="#ffffff" opacity="0.5"/>
 </svg>
