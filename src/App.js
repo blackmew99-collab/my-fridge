@@ -48,6 +48,11 @@ const STYLE = `
   .header-sub{font-size:.78rem;color:var(--text2);margin-top:.4rem;letter-spacing:.06em;}
 
   .install-btn{position:fixed;top:.9rem;right:1rem;z-index:200;display:flex;align-items:center;gap:.35rem;background:var(--sky-l);border:1.5px solid var(--sky);color:var(--sky-d);font-family:var(--font);font-size:.72rem;font-weight:700;padding:.42rem .85rem;border-radius:999px;cursor:pointer;box-shadow:var(--shadow-sm);transition:all .15s;white-space:nowrap;}
+  .room-chip{position:fixed;top:.9rem;left:1rem;z-index:200;display:flex;align-items:center;gap:.35rem;background:var(--sky-l);border:1.5px solid var(--sky);color:var(--sky-d);font-family:var(--font);font-size:.72rem;font-weight:700;padding:.42rem .85rem;border-radius:999px;cursor:pointer;box-shadow:var(--shadow-sm);transition:all .15s;white-space:nowrap;}
+  .room-chip:hover{background:var(--sky);color:#fff;}
+  .room-chip-menu{position:fixed;top:3.1rem;left:1rem;z-index:201;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:.7rem .8rem;box-shadow:var(--shadow);min-width:180px;}
+  .room-chip-menu-code{font-size:.7rem;color:var(--text2);font-weight:700;margin-bottom:.55rem;padding-bottom:.45rem;border-bottom:1px dashed var(--border);}
+  .room-chip-menu-code strong{color:var(--sky-d);font-size:.8rem;}
   .install-btn:hover{background:var(--sky);color:#fff;}
   .ios-guide-overlay{position:fixed;inset:0;background:rgba(74,55,40,.45);z-index:1100;display:flex;align-items:flex-end;justify-content:center;padding:1rem;padding-bottom:5rem;}
   .ios-guide-box{background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);padding:1.4rem;max-width:360px;width:100%;box-shadow:0 16px 48px rgba(180,120,80,.25);text-align:center;}
@@ -314,6 +319,7 @@ export default function FridgeApp() {
   const [roomCode, setRoomCode] = useState(() => localStorage.getItem("fridge_room") || "");
   const [roomInput, setRoomInput] = useState("");
   const [showRoomSetup, setShowRoomSetup] = useState(false);
+  const [showRoomMenu, setShowRoomMenu] = useState(false);
   const currentItemsRef = useRef(items);
   const isSharedRef = useRef(!!(localStorage.getItem("fridge_room") && db));
   const roomCodeRef = useRef(localStorage.getItem("fridge_room") || "");
@@ -622,6 +628,24 @@ export default function FridgeApp() {
     <>
       <style>{STYLE}</style>
       <div className="app">
+        {/* 공유 방 칩 버튼 — 연결 중일 때만 좌상단 표시 */}
+        {isFirebaseReady && isShared && (
+          <>
+            {showRoomMenu && <div style={{position:"fixed",inset:0,zIndex:199}} onClick={()=>setShowRoomMenu(false)} />}
+            <button className="room-chip" onClick={()=>setShowRoomMenu(v=>!v)}>
+              👥 {roomCode}
+            </button>
+            {showRoomMenu && (
+              <div className="room-chip-menu">
+                <div className="room-chip-menu-code">공유 중인 방<br/><strong>{roomCode}</strong></div>
+                <button className="btn btn-ghost" style={{width:"100%",justifyContent:"center",fontSize:".75rem"}} onClick={()=>{leaveRoom();setShowRoomMenu(false);}}>
+                  연결 해제
+                </button>
+              </div>
+            )}
+          </>
+        )}
+
         {/* 홈 화면 추가 버튼 */}
         {showInstallBtn && (
           <button className="install-btn" onClick={handleInstall}>
@@ -656,16 +680,8 @@ export default function FridgeApp() {
             {noExpiry>0&&<span className="stat-pill pill-none">🔖 미설정 {noExpiry}개</span>}
           </div>
 
-          {/* 공유 방 패널 */}
-          {isFirebaseReady && (
-            isShared ? (
-              <div className="room-bar">
-                <span>👥 공유 중</span>
-                <span className="room-badge">{roomCode}</span>
-                <span style={{flex:1,fontSize:".7rem",color:"var(--sky-d)"}}>같은 방 코드를 입력한 사람과 냉장고를 실시간 공유해요</span>
-                <button className="btn btn-ghost" style={{fontSize:".7rem",padding:".3rem .7rem"}} onClick={leaveRoom}>연결 해제</button>
-              </div>
-            ) : (
+          {/* 공유 방 패널 — 미연결 상태일 때만 표시 */}
+          {isFirebaseReady && !isShared && (
               <div className="room-bar" style={{flexDirection:"column",alignItems:"flex-start"}}>
                 <div style={{display:"flex",alignItems:"center",gap:".5rem",width:"100%"}}>
                   <span>👥 가족·친구와 공유하기</span>
@@ -685,7 +701,6 @@ export default function FridgeApp() {
                   </div>
                 )}
               </div>
-            )
           )}
         </header>
 
