@@ -627,7 +627,7 @@ export default function FridgeApp() {
   const expired = items.filter(i=>{ const d=daysUntil(i.expiry); return d!==null&&d<0; }).length;
   const noExpiry = items.filter(i=>!i.expiry).length;
   const alertItems = items.filter(i=>{ const d=daysUntil(i.expiry); return d!==null&&d<=7; });
-  const selectedItems = items.filter(i=>selected.includes(i.id));
+  // selectedItems는 레시피 탭에서 selected + items 직접 사용으로 대체됨
 
   return (
     <>
