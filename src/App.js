@@ -866,20 +866,67 @@ export default function FridgeApp() {
         {/* ── 레시피 탭 ── */}
         {tab==="recipe" && (
           <div className="card">
-            <div className="card-header"><h2 className="card-title">🍳 레시피 검색</h2></div>
-            {selectedItems.length>0 ? (
+            <div className="card-header">
+              <h2 className="card-title">🍳 레시피 검색</h2>
+              {items.length>0 && (
+                <button className="btn btn-ghost" style={{fontSize:".7rem",padding:".25rem .65rem"}}
+                  onClick={()=>{
+                    if(selected.length===items.length) setSelected([]);
+                    else setSelected(items.map(i=>i.id));
+                  }}>
+                  {selected.length===items.length ? "✕ 전체 해제" : "✔ 전체 선택"}
+                </button>
+              )}
+            </div>
+
+            {/* 재료 선택 리스트 */}
+            {items.length===0 ? (
+              <div className="empty" style={{padding:"1rem 0"}}>
+                <span className="empty-icon">🥬</span>냉장고 탭에서 재료를 추가해봐요!
+              </div>
+            ) : (
               <>
-                <p style={{fontSize:".72rem",color:"var(--text2)",fontWeight:700,marginBottom:".5rem"}}>선택된 재료</p>
-                <div className="tag-list">
-                  {selectedItems.map(i=><span key={i.id} className="tag">{i.name}<button onClick={()=>toggleSelect(i.id)}>✕</button></span>)}
+                <p style={{fontSize:".72rem",color:"var(--text2)",fontWeight:700,marginBottom:".5rem"}}>
+                  재료 선택
+                  {selected.length>0
+                    ? <span style={{color:"var(--mint-d)",marginLeft:".4rem"}}>✔ {selected.length}개 선택됨</span>
+                    : <span style={{color:"var(--text3)",marginLeft:".4rem",fontWeight:500}}>— 선택 없으면 전체 재료로 검색</span>
+                  }
+                </p>
+                <div className="item-list" style={{maxHeight:"280px",overflowY:"auto"}}>
+                  {[...items].sort((a,b)=>{
+                    const da=daysUntil(a.expiry), db=daysUntil(b.expiry);
+                    if(da===null&&db===null)return 0;
+                    if(da===null)return 1;
+                    if(db===null)return -1;
+                    return da-db;
+                  }).map(item=>{
+                    const days=daysUntil(item.expiry);
+                    const isSel=selected.includes(item.id);
+                    return (
+                      <div key={item.id} className={`item-row ${expClass(days)}`}
+                        style={{cursor:"pointer",...(isSel?{outline:"2px solid var(--mint)",outlineOffset:"1px",background:"var(--mint-l, #eafaf3)"}:{})}}
+                        onClick={()=>toggleSelect(item.id)}>
+                        <input type="checkbox" className="item-check" checked={isSel} onChange={()=>toggleSelect(item.id)} onClick={e=>e.stopPropagation()} />
+                        <span className="item-name">{item.name}</span>
+                        {item.qty&&<span className="item-qty">{item.qty}{item.unit}</span>}
+                        <span className="item-cat" style={{background:CAT_COLORS[item.category]+"33",color:CAT_TEXT[item.category],border:`1px solid ${CAT_COLORS[item.category]}`}}>{item.category}</span>
+                        <span className="item-right">
+                          {item.expiry
+                            ? <span className={`item-exp ${expTextClass(days)}`}>{expLabel(days)}</span>
+                            : <span className="item-exp exp-none">기한 미설정</span>
+                          }
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </>
-            ) : (
-              <p style={{fontSize:".78rem",color:"var(--text2)",fontWeight:600,marginBottom:".75rem"}}>
-                💡 냉장고 탭에서 재료를 체크하면 해당 재료로만 검색해요. 체크 안 하면 전체 재료로 검색해요!
-              </p>
             )}
-            <hr className="divider" />
+
+            <hr className="divider" style={{margin:".9rem 0"}}/>
+
+            {/* 검색 버튼 */}
             <div style={{display:"flex",gap:".5rem",flexWrap:"wrap"}}>
               <button className="btn btn-mint" onClick={()=>searchRecipeOn("google")} disabled={items.length===0} style={{flex:1,justifyContent:"center"}}>
                 🔍 구글
@@ -892,7 +939,7 @@ export default function FridgeApp() {
               </button>
             </div>
             <p style={{fontSize:".7rem",color:"var(--text3)",fontWeight:600,marginTop:".65rem"}}>
-              선택한 재료 + "요리" 키워드로 새 창에서 검색해요 · {selectedItems.length>0?`${selectedItems.length}개 선택됨`:`전체 ${items.length}개 사용`}
+              선택한 재료 + "요리" 키워드로 새 창에서 검색해요 · {selected.length>0?`${selected.length}개 선택됨`:`전체 ${items.length}개 사용`}
             </p>
           </div>
         )}
