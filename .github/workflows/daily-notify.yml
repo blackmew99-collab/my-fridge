@@ -1,0 +1,30 @@
+name: 🔔 소비기한 알림 메일 발송
+
+on:
+  schedule:
+    # 매일 오전 9시 KST (= UTC 00:00)
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    # GitHub에서 수동으로 테스트 실행 가능
+
+jobs:
+  send-notification:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call notify API
+        run: |
+          RESPONSE=$(curl -s -o response.txt -w "%{http_code}" \
+            -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://my-fridge-sophie-e-s-projects.vercel.app/api/notify")
+
+          echo "HTTP Status: $RESPONSE"
+          echo "Response body:"
+          cat response.txt
+
+          if [ "$RESPONSE" != "200" ]; then
+            echo "❌ 알림 발송 실패 (HTTP $RESPONSE)"
+            exit 1
+          fi
+
+          echo "✅ 알림 발송 완료"
