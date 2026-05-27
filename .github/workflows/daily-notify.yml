@@ -15,7 +15,6 @@ jobs:
         run: |
           RESPONSE=$(curl -s -o response.txt -w "%{http_code}" \
             -X GET \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             "https://my-fridge-sophie-e-s-projects.vercel.app/api/notify")
 
           echo "HTTP Status: $RESPONSE"

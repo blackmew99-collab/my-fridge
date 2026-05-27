@@ -64,11 +64,6 @@ function makeHtml(expiredItems, soonItems, roomCode) {
 }
 
 export default async function handler(req, res) {
-  const secret = process.env.CRON_SECRET;
-  if (secret && req.headers.authorization !== `Bearer ${secret}`) {
-    return res.status(401).end("Unauthorized");
-  }
-
   const DB_URL = process.env.FIREBASE_DB_URL;
   if (!DB_URL) return res.status(500).json({ error: "FIREBASE_DB_URL 환경변수 없음" });
 
