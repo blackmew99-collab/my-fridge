@@ -11,6 +11,11 @@ function expLabel(days) {
   return `⏰ ${days}일 남음`;
 }
 
+// KST 기준 오늘 날짜 (YYYY-MM-DD)
+function todayKST() {
+  return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
 function makeHtml(expiredItems, soonItems, roomCode) {
   const makeRows = (items) => items.map(item => {
     const days = daysUntil(item.expiry);
@@ -78,7 +83,9 @@ export default async function handler(req, res) {
       auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASS },
     });
 
+    const today = todayKST();
     let sentCount = 0;
+    let skippedCount = 0;
     const results = [];
 
     for (const [roomCode, roomData] of Object.entries(fridges)) {
@@ -86,15 +93,20 @@ export default async function handler(req, res) {
       const rawItems = roomData?.items;
       if (!notifyEmail || !rawItems) continue;
 
+      // ── 오늘 이미 발송했으면 건너뜀 (중복 방지) ──
+      if (roomData?.lastNotifiedDate === today) {
+        skippedCount++;
+        results.push({ roomCode, skipped: true, reason: "오늘 이미 발송됨" });
+        continue;
+      }
+
       const items = Array.isArray(rawItems) ? rawItems : Object.values(rawItems);
 
-      // 만료된 재료 (days < 0)
       const expiredItems = items.filter(item => {
         const days = daysUntil(item.expiry);
         return days !== null && days < 0;
       });
 
-      // 3일 이내 만료 예정 (0 ~ 3일)
       const soonItems = items.filter(item => {
         const days = daysUntil(item.expiry);
         return days !== null && days >= 0 && days <= 3;
@@ -110,11 +122,21 @@ export default async function handler(req, res) {
         html: makeHtml(expiredItems, soonItems, roomCode),
       });
 
+      // ── 발송 날짜를 Firebase에 기록 ──
+      await fetch(`${DB_URL}/fridges/${encodeURIComponent(roomCode)}/lastNotifiedDate.json`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(today),
+      });
+
       sentCount++;
-      results.push({ roomCode, email: notifyEmail, expired: expiredItems.length, soon: soonItems.length });
+      results.push({ roomCode, email: notifyEmail, expired: expiredItems.length, soon: soonItems.length, date: today });
     }
 
-    res.status(200).json({ message: `${sentCount}개 방 이메일 발송 완료`, results });
+    res.status(200).json({
+      message: `${sentCount}개 방 이메일 발송 완료 (${skippedCount}개 중복 스킵)`,
+      results,
+    });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: e.message });

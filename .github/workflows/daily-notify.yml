@@ -2,10 +2,13 @@ name: 🔔 소비기한 알림 메일 발송
 
 on:
   schedule:
-    # 매일 오전 9시 KST (= UTC 00:00)
+    # KST 오전 9시 = UTC 00:00 (GitHub 지연 대비로 00:00 / 00:30 / 01:00 세 번 시도)
+    # 중복 발송은 API에서 자동 차단됨
     - cron: '0 0 * * *'
+    - cron: '30 0 * * *'
+    - cron: '0 1 * * *'
   workflow_dispatch:
-    # GitHub에서 수동으로 테스트 실행 가능
+    # GitHub Actions 탭에서 수동 테스트 가능
 
 jobs:
   send-notification:
@@ -18,12 +21,12 @@ jobs:
             "https://my-fridge-sophie-e-s-projects.vercel.app/api/notify")
 
           echo "HTTP Status: $RESPONSE"
-          echo "Response body:"
+          echo "Response:"
           cat response.txt
 
           if [ "$RESPONSE" != "200" ]; then
-            echo "❌ 알림 발송 실패 (HTTP $RESPONSE)"
+            echo "❌ API 호출 실패 (HTTP $RESPONSE)"
             exit 1
           fi
 
-          echo "✅ 알림 발송 완료"
+          echo "✅ 완료"
