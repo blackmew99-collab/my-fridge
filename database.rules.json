@@ -1,0 +1,23 @@
+{
+  "rules": {
+    "fridges": {
+      ".read": true,
+      ".write": false,
+      "$roomCode": {
+        ".write": "$roomCode.length >= 2 && $roomCode.length <= 100",
+        "notifyEmail": {
+          ".validate": "newData.isString() && newData.val().length <= 1000"
+        },
+        "lastNotifiedDate": {
+          ".validate": "newData.isString() && newData.val().length <= 10"
+        },
+        "items": {
+          ".validate": "newData.hasChildren()"
+        },
+        "shoppingList": {
+          ".validate": "newData.hasChildren()"
+        }
+      }
+    }
+  }
+}
