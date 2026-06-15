@@ -328,6 +328,9 @@ export default function FridgeApp() {
   const currentItemsRef = useRef(items);
   const isSharedRef = useRef(!!(localStorage.getItem("fridge_room") && db));
   const roomCodeRef = useRef(localStorage.getItem("fridge_room") || "");
+  // 사용자가 직접 '연결' 버튼으로 방에 들어온 경우에만 true → 빈 방 시딩은 이때만 수행
+  // (새로고침/재접속 시에는 false라서 Firebase의 null을 '비어있음'으로 그대로 반영)
+  const seedOnJoinRef = useRef(false);
   const isShared = !!(roomCode && db);
 
   // refs 최신값 유지
@@ -345,10 +348,12 @@ export default function FridgeApp() {
     const shopPath = ref(db, `fridges/${roomCode}/shoppingList`);
     const unsubscribe = onValue(shopPath, (snapshot) => {
       const data = snapshot.val();
-      if (isFirst && data === null) {
+      // 빈 방 시딩: 사용자가 방금 '연결'했고, 방이 비어있을 때만 내 로컬 목록을 올림
+      if (isFirst && data === null && seedOnJoinRef.current) {
         const cur = currentShopRef.current;
         if (cur.length > 0) set(shopPath, cur);
       } else {
+        // 그 외에는 Firebase가 진실의 원천 — null이면 '비어있음'으로 그대로 반영 (삭제 동기화)
         setShoppingList(data ? (Array.isArray(data) ? data : Object.values(data)) : []);
       }
       isFirst = false;
@@ -376,11 +381,12 @@ export default function FridgeApp() {
     const itemsPath = ref(db, `fridges/${roomCode}/items`);
     const unsubscribe = onValue(itemsPath, (snapshot) => {
       const data = snapshot.val();
-      if (isFirst && data === null) {
-        // 빈 방 → 내 현재 아이템 올리기 (이때만 예외적으로 씀)
+      // 빈 방 시딩: 사용자가 방금 '연결'했고, 방이 비어있을 때만 내 로컬 재료를 올림
+      if (isFirst && data === null && seedOnJoinRef.current) {
         const toUpload = currentItemsRef.current;
         if (toUpload.length > 0) set(itemsPath, toUpload);
       } else {
+        // 그 외에는 Firebase가 진실의 원천 — null이면 '비어있음'으로 그대로 반영 (삭제 동기화)
         const newItems = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
         setItems(newItems); // persistItems 아닌 setItems 직접 호출 (Firebase 에코 방지)
       }
@@ -405,6 +411,7 @@ export default function FridgeApp() {
   const joinRoom = () => {
     const code = roomInput.trim().toLowerCase().replace(/\s+/g, "-");
     if (!code) return;
+    seedOnJoinRef.current = true; // 이번 연결에서만 빈 방 시딩 허용
     localStorage.setItem("fridge_room", code);
     setRoomCode(code);
     setRoomInput("");
