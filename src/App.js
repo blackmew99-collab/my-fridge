@@ -143,6 +143,20 @@ const STYLE = `
   .exp-ok{color:var(--mint-d);} .exp-warn{color:var(--warn-d);} .exp-danger{color:var(--danger-d);} .exp-none{color:var(--text3);font-style:italic;}
   .item-del{background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:1rem;padding:.2rem .3rem;border-radius:6px;transition:all .15s;flex-shrink:0;}
   .item-del:hover{color:var(--danger-d);background:var(--danger-l);}
+  .item-edit-btn{background:transparent;border:none;cursor:pointer;font-size:.95rem;padding:.2rem .3rem;border-radius:6px;transition:all .15s;flex-shrink:0;opacity:.7;}
+  .item-edit-btn:hover{opacity:1;background:var(--surface2);}
+  /* 재료 수정 모드 */
+  .item-row.item-edit{background:var(--pink-l);border:1.5px solid var(--pink);align-items:stretch;}
+  .item-edit-form{display:flex;flex-wrap:wrap;gap:.45rem;width:100%;align-items:center;}
+  .item-edit-form input,.item-edit-form select{font-family:var(--font);font-size:.82rem;font-weight:600;padding:.4rem .55rem;border:1.5px solid var(--border);border-radius:8px;background:#fff;color:var(--text);}
+  .item-edit-form input:focus,.item-edit-form select:focus{border-color:var(--pink);outline:none;box-shadow:0 0 0 3px var(--pink-l);}
+  .item-edit-name{flex:1 1 100%;min-width:120px;}
+  .item-edit-qty{display:flex;gap:.3rem;flex:1 1 auto;}
+  .item-edit-qty input{width:62px;}
+  .item-edit-qty select{width:58px;}
+  .item-edit-cat{flex:0 0 auto;}
+  .item-edit-exp{flex:1 1 auto;min-width:130px;}
+  .item-edit-btns{display:flex;gap:.35rem;flex:1 1 100%;justify-content:flex-end;}
   .item-check{appearance:none;width:17px;height:17px;border:2px solid var(--border);border-radius:5px;background:transparent;cursor:pointer;flex-shrink:0;position:relative;transition:all .15s;}
   .item-check:checked{background:var(--pink);border-color:var(--pink);}
   .item-check:checked::after{content:'✓';position:absolute;top:-3px;left:1px;font-size:.75rem;color:#fff;font-weight:800;}
@@ -285,6 +299,8 @@ export default function FridgeApp() {
   const [tab, setTab] = useState("fridge");
   const [form, setForm] = useState({ name:"", qty:"", unit:"g", category:"냉장", expiry:"" });
   const [selected, setSelected] = useState([]);
+  const [editId, setEditId] = useState(null); // 수정 중인 재료 id
+  const [editForm, setEditForm] = useState({ name:"", qty:"", unit:"g", category:"냉장", expiry:"" });
 
   const [toast, setToast] = useState(null);
   const [shelfPopup, setShelfPopup] = useState(null);
@@ -590,6 +606,21 @@ export default function FridgeApp() {
 
   const deleteItem = id => { persistItems(currentItemsRef.current.filter(i=>i.id!==id)); setSelected(prev=>prev.filter(s=>s!==id)); };
 
+  // ── 재료 수정 ──────────────────────────────────────────────────────────────
+  const startEdit = item => {
+    setEditId(item.id);
+    setEditForm({ name:item.name, qty:item.qty||"", unit:item.unit||"개", category:item.category, expiry:item.expiry||"" });
+  };
+  const cancelEdit = () => { setEditId(null); };
+  const saveEdit = () => {
+    if (!editForm.name.trim()) { showToast("❗ 재료명을 입력해주세요"); return; }
+    persistItems(currentItemsRef.current.map(i => i.id===editId
+      ? { ...i, name:editForm.name.trim(), qty:editForm.qty, unit:editForm.unit, category:editForm.category, expiry:editForm.expiry }
+      : i));
+    setEditId(null);
+    showToast("✏️ 수정됐어요!");
+  };
+
   // ── 쇼핑 목록 함수 ────────────────────────────────────────────────────────
   const persistShop = useCallback((newList) => {
     setShoppingList(newList);
@@ -839,6 +870,32 @@ export default function FridgeApp() {
                     const days=daysUntil(item.expiry);
                     const isSelected=selected.includes(item.id);
                     const isAiLoading=aiLoadingIds.has(item.id);
+
+                    // ── 수정 모드 ──
+                    if (editId===item.id) {
+                      return (
+                        <div key={item.id} className="item-row item-edit">
+                          <div className="item-edit-form">
+                            <input className="item-edit-name" value={editForm.name} onChange={e=>setEditForm(p=>({...p,name:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&saveEdit()} placeholder="재료명" autoFocus />
+                            <div className="item-edit-qty">
+                              <input value={editForm.qty} onChange={e=>setEditForm(p=>({...p,qty:e.target.value}))} placeholder="수량" />
+                              <select value={editForm.unit} onChange={e=>setEditForm(p=>({...p,unit:e.target.value}))}>
+                                {["g","kg","ml","L","개","봉","팩","줌"].map(u=><option key={u}>{u}</option>)}
+                              </select>
+                            </div>
+                            <select className="item-edit-cat" value={editForm.category} onChange={e=>setEditForm(p=>({...p,category:e.target.value}))}>
+                              {CATEGORIES.map(c=><option key={c}>{c}</option>)}
+                            </select>
+                            <input className="item-edit-exp" type="date" value={editForm.expiry} onChange={e=>setEditForm(p=>({...p,expiry:e.target.value}))} style={{colorScheme:"light"}} />
+                            <div className="item-edit-btns">
+                              <button className="btn btn-pink" style={{fontSize:".72rem",padding:".35rem .7rem"}} onClick={saveEdit}>✔ 저장</button>
+                              <button className="btn btn-ghost" style={{fontSize:".72rem",padding:".35rem .7rem"}} onClick={cancelEdit}>취소</button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+
                     return (
                       <div key={item.id} className={`item-row ${expClass(days)}`} style={isSelected?{outline:"2px solid var(--pink)",outlineOffset:"1px"}:{}}>
                         <input type="checkbox" className="item-check" checked={isSelected} onChange={()=>toggleSelect(item.id)} />
@@ -857,6 +914,7 @@ export default function FridgeApp() {
                             </>
                           )}
                         </span>
+                        <button className="item-edit-btn" onClick={()=>startEdit(item)} title="수정">✏️</button>
                         <button className="item-del" onClick={()=>deleteItem(item.id)}>✕</button>
                       </div>
                     );
