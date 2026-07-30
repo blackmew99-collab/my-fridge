@@ -231,9 +231,9 @@ const STYLE = `
 
 `;
 
-const CATEGORIES = ["냉장","냉동"];
-const CAT_COLORS = {"냉장":"#93d0f5","냉동":"#c4b0f7"};
-const CAT_TEXT   = {"냉장":"#1a6b9a","냉동":"#6040b8"};
+const CATEGORIES = ["냉장","냉동","실온"];
+const CAT_COLORS = {"냉장":"#93d0f5","냉동":"#c4b0f7","실온":"#ffc98a"};
+const CAT_TEXT   = {"냉장":"#1a6b9a","냉동":"#6040b8","실온":"#a06a1a"};
 
 function daysUntil(d){if(!d)return null;return Math.ceil((new Date(d)-new Date())/86400000);}
 function expClass(days){if(days===null)return "";if(days<=3)return "danger";if(days<=7)return "warn";return "";}
