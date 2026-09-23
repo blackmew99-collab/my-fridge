@@ -229,6 +229,15 @@ const STYLE = `
   .shelf-opt-date{font-size:.67rem;color:var(--text2);font-weight:600;}
   .popup-loading{display:flex;align-items:center;gap:.6rem;color:var(--text2);font-size:.8rem;font-weight:700;padding:1.5rem 0;justify-content:center;}
 
+  /* ── 영수증 팝업 ── */
+  .receipt-item-list{max-height:340px;overflow-y:auto;margin-bottom:.4rem;}
+  .receipt-item-row{display:flex;align-items:center;gap:.4rem;padding:.5rem .2rem;border-bottom:1px solid var(--border);}
+  .receipt-item-row:last-child{border-bottom:none;}
+  .receipt-item-name{flex:1;min-width:0;font-family:var(--font);font-size:.82rem;font-weight:700;padding:.4rem .55rem;border:1.5px solid var(--border);border-radius:8px;background:#fff;color:var(--text);}
+  .receipt-item-qty{width:52px;font-family:var(--font);font-size:.8rem;font-weight:600;padding:.4rem .4rem;border:1.5px solid var(--border);border-radius:8px;background:#fff;color:var(--text);text-align:center;}
+  .receipt-item-unit{width:54px;font-family:var(--font);font-size:.8rem;font-weight:600;padding:.4rem .3rem;border:1.5px solid var(--border);border-radius:8px;background:#fff;color:var(--text);}
+  .receipt-item-name:focus,.receipt-item-qty:focus,.receipt-item-unit:focus{border-color:var(--pink);outline:none;box-shadow:0 0 0 3px var(--pink-l);}
+
 `;
 
 const CATEGORIES = ["냉장","냉동","실온"];
@@ -293,6 +302,48 @@ function ShelfPopup({ popup, onClose, onApply, onSelect }) {
   );
 }
 
+// ── 영수증 인식 팝업 ──────────────────────────────────────────────────────────
+function ReceiptPopup({ popup, onClose, onToggle, onEdit, onConfirm }) {
+  if (!popup) return null;
+  const checkedCount = popup.items.filter(i=>i.checked).length;
+  return (
+    <div className="popup-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="popup-box">
+        <div className="popup-header">
+          <h3>🧾 영수증으로 재료 추가</h3>
+          <p>인식된 품목을 확인하고 필요하면 수정해주세요</p>
+        </div>
+        {popup.loading ? (
+          <div className="popup-loading"><span>영수증 분석 중</span><span className="dot-anim"><span>.</span><span>.</span><span>.</span></span></div>
+        ) : popup.error ? (
+          <div className="shelf-summary" style={{background:"var(--danger-l)",borderColor:"var(--danger-d)",color:"var(--danger-d)"}}>{popup.error}</div>
+        ) : (
+          <div className="item-list receipt-item-list">
+            {popup.items.map(item => (
+              <div key={item.id} className="receipt-item-row">
+                <input type="checkbox" className="item-check" checked={item.checked} onChange={()=>onToggle(item.id)} />
+                <input className="receipt-item-name" value={item.name} onChange={e=>onEdit(item.id,"name",e.target.value)} placeholder="품목명" />
+                <input className="receipt-item-qty" value={item.qty} onChange={e=>onEdit(item.id,"qty",e.target.value)} placeholder="수량" />
+                <select className="receipt-item-unit" value={item.unit} onChange={e=>onEdit(item.id,"unit",e.target.value)}>
+                  {["g","kg","ml","L","개","봉","팩","줌"].map(u=><option key={u}>{u}</option>)}
+                </select>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="popup-actions">
+          <button className="btn btn-ghost" onClick={onClose}>취소</button>
+          {!popup.loading && !popup.error && (
+            <button className="btn btn-pink" onClick={onConfirm} disabled={checkedCount===0}>
+              🧊 {checkedCount}개 냉장고에 추가
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── 메인 앱 ────────────────────────────────────────────────────────────────
 export default function FridgeApp() {
   const [items, setItems] = useState(() => { try { return JSON.parse(localStorage.getItem("fridge_items")||"[]"); } catch { return []; } });
@@ -314,6 +365,8 @@ export default function FridgeApp() {
     return saved ? saved.split(",").filter(Boolean) : [];
   });
   const [notifyEmailInput, setNotifyEmailInput] = useState("");
+  const [receiptPopup, setReceiptPopup] = useState(null); // {loading, items:[{id,name,qty,unit,checked}], error}
+  const receiptInputRef = useRef(null);
 
   // ── PWA 홈 화면 추가 ────────────────────────────────────────────────────────
   const [installPrompt, setInstallPrompt] = useState(null);
@@ -606,6 +659,66 @@ export default function FridgeApp() {
 
   const deleteItem = id => { persistItems(currentItemsRef.current.filter(i=>i.id!==id)); setSelected(prev=>prev.filter(s=>s!==id)); };
 
+  // ── 영수증으로 재료 추가 ──────────────────────────────────────────────────────
+  const openReceiptPicker = () => receiptInputRef.current?.click();
+
+  // 큰 사진은 API 전송 전에 리사이즈+압축 (Vercel 요청 크기 제한 대비)
+  const resizeImageToDataUrl = (file, maxSize = 1280, quality = 0.75) => new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      img.onerror = reject;
+      img.onload = () => {
+        const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  const handleReceiptFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // 같은 파일 재선택 가능하도록
+    if (!file) return;
+
+    setReceiptPopup({ loading:true, items:[], error:"" });
+    try {
+      const dataUrl = await resizeImageToDataUrl(file);
+      const res = await fetch("/api/receipt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: dataUrl }),
+      });
+      const data = await res.json();
+      if (data.error) {
+        setReceiptPopup({ loading:false, items:[], error:data.error });
+        return;
+      }
+      const items = data.items.map((it, i) => ({ id:`r${Date.now()}_${i}`, ...it, checked:true }));
+      setReceiptPopup({ loading:false, items, error:"" });
+    } catch (err) {
+      setReceiptPopup({ loading:false, items:[], error:"영수증 인식에 실패했어요. 다시 시도해주세요." });
+    }
+  };
+
+  const toggleReceiptItem = id => setReceiptPopup(p => p && ({ ...p, items:p.items.map(i=>i.id===id?{...i,checked:!i.checked}:i) }));
+  const editReceiptItem = (id, field, value) => setReceiptPopup(p => p && ({ ...p, items:p.items.map(i=>i.id===id?{...i,[field]:value}:i) }));
+
+  const confirmReceiptItems = () => {
+    const checked = (receiptPopup?.items || []).filter(i => i.checked && i.name.trim());
+    if (!checked.length) { setReceiptPopup(null); return; }
+    const newFridgeItems = checked.map(i => ({ id:Date.now()+Math.random(), name:i.name.trim(), qty:i.qty, unit:i.unit, category:"냉장", expiry:"" }));
+    persistItems([...newFridgeItems, ...currentItemsRef.current]);
+    showToast(`🧾 ${checked.length}개 재료를 냉장고에 추가했어요!`);
+    setReceiptPopup(null);
+  };
+
   // ── 재료 수정 ──────────────────────────────────────────────────────────────
   const startEdit = item => {
     setEditId(item.id);
@@ -809,6 +922,10 @@ export default function FridgeApp() {
             <div className="card">
               <div className="card-header">
                 <h2 className="card-title">🛒 재료 추가하기</h2>
+                <button className="btn btn-mint" style={{fontSize:".72rem"}} onClick={openReceiptPicker}>
+                  🧾 영수증으로 추가
+                </button>
+                <input ref={receiptInputRef} type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={handleReceiptFile} />
               </div>
               <div className="add-form">
                 <div className="field">
@@ -1077,6 +1194,7 @@ export default function FridgeApp() {
       </div>
 
       <ShelfPopup popup={shelfPopup} onClose={()=>setShelfPopup(null)} onApply={applyShelfLife} onSelect={i=>setShelfPopup(prev=>prev?{...prev,selectedOption:i}:null)} />
+      <ReceiptPopup popup={receiptPopup} onClose={()=>setReceiptPopup(null)} onToggle={toggleReceiptItem} onEdit={editReceiptItem} onConfirm={confirmReceiptItems} />
       {toast&&<div className="toast">{toast}</div>}
     </>
   );
