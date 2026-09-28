@@ -142,6 +142,8 @@ const STYLE = `
   .item-exp{font-size:.72rem;font-weight:600;}
   .exp-ok{color:var(--mint-d);} .exp-warn{color:var(--warn-d);} .exp-danger{color:var(--danger-d);} .exp-none{color:var(--text3);font-style:italic;}
   .item-del{background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:1rem;padding:.2rem .3rem;border-radius:6px;transition:all .15s;flex-shrink:0;}
+  .btn-collapse{background:var(--surface2);border:1.5px solid var(--border);color:var(--text2);cursor:pointer;font-size:.7rem;width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;}
+  .btn-collapse:hover{background:var(--pink-l);border-color:var(--pink);color:var(--pink-d);}
   .item-del:hover{color:var(--danger-d);background:var(--danger-l);}
   .item-edit-btn{background:transparent;border:none;cursor:pointer;font-size:.95rem;padding:.2rem .3rem;border-radius:6px;transition:all .15s;flex-shrink:0;opacity:.7;}
   .item-edit-btn:hover{opacity:1;background:var(--surface2);}
@@ -308,6 +310,7 @@ export default function FridgeApp() {
   const [aiLoadingIds, setAiLoadingIds] = useState(new Set());
   const [categoryFilter, setCategoryFilter] = useState(null); // null=전체, "냉장", "냉동"
   const [shoppingList, setShoppingList] = useState(() => { try { return JSON.parse(localStorage.getItem("shop_items")||"[]"); } catch { return []; } });
+  const [shopCollapsed, setShopCollapsed] = useState(() => localStorage.getItem("shop_collapsed")==="1");
   const [shopForm, setShopForm] = useState({ name:"", qty:"", unit:"개" });
   const currentShopRef = useRef(shoppingList);
   const [notifyEmails, setNotifyEmails] = useState(() => {
@@ -623,6 +626,14 @@ export default function FridgeApp() {
   };
 
   // ── 쇼핑 목록 함수 ────────────────────────────────────────────────────────
+  const toggleShopCollapsed = () => {
+    setShopCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem("shop_collapsed", next ? "1" : "0");
+      return next;
+    });
+  };
+
   const persistShop = useCallback((newList) => {
     setShoppingList(newList);
     if (isSharedRef.current) set(ref(db, `fridges/${roomCodeRef.current}/shoppingList`), newList.length ? newList : null);
@@ -762,48 +773,57 @@ export default function FridgeApp() {
             {/* 쇼핑 목록 카드 */}
             <div className="card">
               <div className="card-header">
-                <h2 className="card-title">🛍️ 쇼핑 목록</h2>
-                {shoppingList.filter(i=>i.done).length>0 && (
+                <h2 className="card-title" style={{cursor:"pointer"}} onClick={toggleShopCollapsed}>
+                  🛍️ 쇼핑 목록{shoppingList.length>0&&<span style={{color:"var(--text2)",fontWeight:600,fontSize:".78rem"}}> ({shoppingList.length})</span>}
+                </h2>
+                {!shopCollapsed && shoppingList.filter(i=>i.done).length>0 && (
                   <button className="btn btn-mint" style={{fontSize:".72rem"}} onClick={moveCheckedToFridge}>
                     🧊 냉장고에 추가
                   </button>
                 )}
+                <button className="btn-collapse" onClick={toggleShopCollapsed} aria-label={shopCollapsed?"펼치기":"접기"}>
+                  {shopCollapsed?"▼":"▲"}
+                </button>
               </div>
-              <div className="shop-form">
-                <div className="field">
-                  <label>재료명</label>
-                  <input value={shopForm.name} onChange={e=>setShopForm(p=>({...p,name:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&addShopItem()} placeholder="예: 두부, 계란" />
-                </div>
-                <div className="field">
-                  <label>수량</label>
-                  <input value={shopForm.qty} onChange={e=>setShopForm(p=>({...p,qty:e.target.value}))} placeholder="1" style={{width:"58px"}} />
-                </div>
-                <div className="field">
-                  <label>단위</label>
-                  <select value={shopForm.unit} onChange={e=>setShopForm(p=>({...p,unit:e.target.value}))} style={{width:"62px"}}>
-                    {["개","g","kg","ml","L","봉","팩","줌"].map(u=><option key={u}>{u}</option>)}
-                  </select>
-                </div>
-                <button className="btn btn-pink btn-add-shop" onClick={addShopItem} style={{alignSelf:"flex-end"}}>+ 추가</button>
-              </div>
-              {shoppingList.length===0 ? (
-                <div className="empty" style={{padding:"1.2rem 0"}}><span className="empty-icon" style={{fontSize:"1.8rem"}}>🛍️</span>살 재료를 추가해봐요!</div>
-              ) : (
-                <div className="item-list">
-                  {shoppingList.map(item=>(
-                    <div key={item.id} className={`shop-item${item.done?" done":""}`}>
-                      <input type="checkbox" className="item-check" checked={!!item.done} onChange={()=>toggleShopDone(item.id)} />
-                      <span className={`shop-item-name${item.done?" done":""}`}>{item.name}</span>
-                      {item.qty&&<span className="item-qty">{item.qty}{item.unit}</span>}
-                      <button className="item-del" onClick={()=>deleteShopItem(item.id)}>✕</button>
+              {!shopCollapsed && (
+                <>
+                  <div className="shop-form">
+                    <div className="field">
+                      <label>재료명</label>
+                      <input value={shopForm.name} onChange={e=>setShopForm(p=>({...p,name:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&addShopItem()} placeholder="예: 두부, 계란" />
                     </div>
-                  ))}
-                </div>
-              )}
-              {shoppingList.filter(i=>i.done).length>0&&(
-                <p style={{fontSize:".7rem",color:"var(--text2)",fontWeight:600,marginTop:".75rem"}}>
-                  ✅ 체크한 항목을 <strong style={{color:"var(--mint-d)"}}>냉장고에 추가</strong>하면 재료 목록으로 이동해요
-                </p>
+                    <div className="field">
+                      <label>수량</label>
+                      <input value={shopForm.qty} onChange={e=>setShopForm(p=>({...p,qty:e.target.value}))} placeholder="1" style={{width:"58px"}} />
+                    </div>
+                    <div className="field">
+                      <label>단위</label>
+                      <select value={shopForm.unit} onChange={e=>setShopForm(p=>({...p,unit:e.target.value}))} style={{width:"62px"}}>
+                        {["개","g","kg","ml","L","봉","팩","줌"].map(u=><option key={u}>{u}</option>)}
+                      </select>
+                    </div>
+                    <button className="btn btn-pink btn-add-shop" onClick={addShopItem} style={{alignSelf:"flex-end"}}>+ 추가</button>
+                  </div>
+                  {shoppingList.length===0 ? (
+                    <div className="empty" style={{padding:"1.2rem 0"}}><span className="empty-icon" style={{fontSize:"1.8rem"}}>🛍️</span>살 재료를 추가해봐요!</div>
+                  ) : (
+                    <div className="item-list">
+                      {shoppingList.map(item=>(
+                        <div key={item.id} className={`shop-item${item.done?" done":""}`}>
+                          <input type="checkbox" className="item-check" checked={!!item.done} onChange={()=>toggleShopDone(item.id)} />
+                          <span className={`shop-item-name${item.done?" done":""}`}>{item.name}</span>
+                          {item.qty&&<span className="item-qty">{item.qty}{item.unit}</span>}
+                          <button className="item-del" onClick={()=>deleteShopItem(item.id)}>✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {shoppingList.filter(i=>i.done).length>0&&(
+                    <p style={{fontSize:".7rem",color:"var(--text2)",fontWeight:600,marginTop:".75rem"}}>
+                      ✅ 체크한 항목을 <strong style={{color:"var(--mint-d)"}}>냉장고에 추가</strong>하면 재료 목록으로 이동해요
+                    </p>
+                  )}
+                </>
               )}
             </div>
 
