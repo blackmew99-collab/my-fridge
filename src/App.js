@@ -610,6 +610,38 @@ export default function FridgeApp() {
 
   const deleteItem = id => { persistItems(currentItemsRef.current.filter(i=>i.id!==id)); setSelected(prev=>prev.filter(s=>s!==id)); };
 
+  // ── 클립보드에서 붙여넣기 ────────────────────────────────────────────────────
+  const parseClipboardLine = (line) => {
+    // "양파 2개", "감자 500g" 처럼 끝에 수량+단위가 붙어있으면 분리
+    const m = line.match(/^(.+?)\s+(\d+(?:\.\d+)?)\s*(g|kg|ml|L|개|봉|팩|줌)?$/);
+    if (m) return { name: m[1].trim(), qty: m[2], unit: m[3] || "개" };
+    return { name: line.trim(), qty: "", unit: "개" };
+  };
+
+  const pasteFromClipboard = async () => {
+    let text = "";
+    try {
+      text = await navigator.clipboard.readText();
+    } catch {
+      showToast("❗ 클립보드 읽기를 허용해주세요");
+      return;
+    }
+    if (!text.trim()) { showToast("❗ 클립보드가 비어있어요"); return; }
+
+    const lines = text.split(/[\n,]+/).map(l => l.trim()).filter(Boolean).slice(0, 50);
+    if (!lines.length) { showToast("❗ 붙여넣을 내용이 없어요"); return; }
+
+    const newItems = lines.map((line, i) => {
+      const { name, qty, unit } = parseClipboardLine(line);
+      return { id: Date.now() + i + Math.random(), name, qty, unit, category: "냉장", expiry: "" };
+    }).filter(i => i.name);
+
+    if (!newItems.length) { showToast("❗ 인식된 재료가 없어요"); return; }
+
+    persistItems([...newItems, ...currentItemsRef.current]);
+    showToast(`📋 ${newItems.length}개 재료를 추가했어요!`);
+  };
+
   // ── 재료 수정 ──────────────────────────────────────────────────────────────
   const startEdit = item => {
     setEditId(item.id);
@@ -830,6 +862,9 @@ export default function FridgeApp() {
             <div className="card">
               <div className="card-header">
                 <h2 className="card-title">🛒 재료 추가하기</h2>
+                <button className="btn btn-mint" style={{fontSize:".72rem"}} onClick={pasteFromClipboard}>
+                  📋 클립보드에서 붙여넣기
+                </button>
               </div>
               <div className="add-form">
                 <div className="field">
