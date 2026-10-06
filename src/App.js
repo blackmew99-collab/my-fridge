@@ -244,8 +244,8 @@ function daysUntil(d){if(!d)return null;return Math.ceil((new Date(d)-new Date()
 function expClass(days){if(days===null)return "";if(days<=3)return "danger";if(days<=7)return "warn";return "";}
 function expLabel(days){if(days===null)return "";if(days<0)return `만료 ${Math.abs(days)}일 초과`;if(days===0)return "오늘 만료!";return `${days}일 남음`;}
 function expTextClass(days){if(days===null)return "exp-none";if(days<=3)return "exp-danger";if(days<=7)return "exp-warn";return "exp-ok";}
-// 재료 목록 탭 필터: "우선"=소비기한 1개월(30일) 이내(만료 포함), "전체"=모두, 그 외=카테고리
-function matchFilter(item,tab){if(tab==="전체")return true;if(tab==="우선"){const d=daysUntil(item.expiry);return d!==null&&d<=30;}return item.category===tab;}
+// 재료 목록 탭 필터: "우선"=소비기한 1개월(30일) 이내(만료 포함) + 기한 미설정, "전체"=모두, 그 외=카테고리
+function matchFilter(item,tab){if(tab==="전체")return true;if(tab==="우선"){const d=daysUntil(item.expiry);return d===null||d<=30;}return item.category===tab;}
 function addDays(n){const d=new Date();d.setDate(d.getDate()+n);return d.toISOString().split("T")[0];}
 function makeCalendarLink(item){const d=new Date(item.expiry);const fmt=n=>String(n).padStart(2,"0");const date=`${d.getFullYear()}${fmt(d.getMonth()+1)}${fmt(d.getDate())}`;return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`🧊 소비기한 임박: ${item.name}`)}&dates=${date}/${date}&details=${encodeURIComponent(`재료: ${item.name}`)}`;}
 function makeMailLink(items){const subject=encodeURIComponent(`[냉장고 알림] 소비기한 임박 재료 ${items.length}개`);const body=encodeURIComponent(`소비기한이 임박한 재료들이에요!\n\n`+items.map(i=>`• ${i.name} — ${expLabel(daysUntil(i.expiry))}`).join("\n")+`\n\n빨리 써주세요 🥺`);return `mailto:?subject=${subject}&body=${body}`;}
@@ -918,7 +918,7 @@ export default function FridgeApp() {
               {items.length===0 ? (
                 <div className="empty"><span className="empty-icon">🥬</span>재료를 추가해봐요!</div>
               ) : items.filter(i=>matchFilter(i,categoryFilter)).length===0 ? (
-                <div className="empty"><span className="empty-icon">✨</span>{categoryFilter==="우선"?"소비기한이 1개월 이내인 재료가 없어요!":"이 탭에 해당하는 재료가 없어요!"}</div>
+                <div className="empty"><span className="empty-icon">✨</span>{categoryFilter==="우선"?"소비기한이 1개월 이내이거나 미설정인 재료가 없어요!":"이 탭에 해당하는 재료가 없어요!"}</div>
               ) : (
                 <div className="item-list">
                   {items.filter(item=>matchFilter(item,categoryFilter)).sort((a,b)=>{
