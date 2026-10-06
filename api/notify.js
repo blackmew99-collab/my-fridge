@@ -12,6 +12,8 @@ function expLabel(days) {
 }
 
 // KST 기준 오늘 날짜 (YYYY-MM-DD)
+const APP_URL = process.env.APP_URL || "https://my-fridge-sophie-e-s-projects.vercel.app";
+
 function todayKST() {
   return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
 }
@@ -55,11 +57,11 @@ function makeHtml(expiredItems, soonItems, roomCode) {
 
   return `
     <div style="font-family:'Apple SD Gothic Neo',Arial,sans-serif;max-width:520px;margin:0 auto;background:#fdf6f0;padding:28px;border-radius:18px;">
-      <div style="text-align:center;margin-bottom:20px;">
+      <a href="${APP_URL}" target="_blank" style="display:block;text-align:center;margin-bottom:20px;text-decoration:none;">
         <div style="font-size:3rem;line-height:1;">🧊</div>
         <h2 style="color:#c2607a;margin:8px 0 4px;font-size:1.5rem;">My Fridge 소비기한 알림</h2>
         <p style="color:#9a7b6a;font-size:0.85rem;margin:0;">방 코드: ${roomCode}</p>
-      </div>
+      </a>
       ${expiredSection}
       ${soonSection}
       <p style="color:#c4a898;font-size:0.78rem;text-align:center;margin:8px 0 0;">
