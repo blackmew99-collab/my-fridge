@@ -126,7 +126,9 @@ const STYLE = `
   .cat-filter{display:flex;gap:.4rem;flex-wrap:wrap;}
   .cat-filter-btn{padding:.32rem .85rem;border-radius:999px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text2);font-family:var(--font);font-size:.74rem;font-weight:700;cursor:pointer;transition:all .15s;}
   .cat-filter-btn:hover{border-color:var(--sky);color:var(--sky-d);}
-  .cat-filter-btn.active-all{background:var(--pink-l);border-color:var(--pink);color:var(--pink-d);}
+  .cat-filter-btn.active-전체{background:var(--pink-l);border-color:var(--pink);color:var(--pink-d);}
+  .cat-filter-btn.active-우선{background:var(--peach-l);border-color:var(--peach);color:var(--peach-d);}
+  .cat-filter-btn.active-실온{background:var(--peach-l);border-color:var(--peach);color:var(--peach-d);}
   .cat-filter-btn.active-냉장{background:var(--sky-l);border-color:var(--sky);color:var(--sky-d);}
   .cat-filter-btn.active-냉동{background:var(--lav-l);border-color:var(--lav);color:var(--lav-d);}
 
@@ -242,6 +244,8 @@ function daysUntil(d){if(!d)return null;return Math.ceil((new Date(d)-new Date()
 function expClass(days){if(days===null)return "";if(days<=3)return "danger";if(days<=7)return "warn";return "";}
 function expLabel(days){if(days===null)return "";if(days<0)return `만료 ${Math.abs(days)}일 초과`;if(days===0)return "오늘 만료!";return `${days}일 남음`;}
 function expTextClass(days){if(days===null)return "exp-none";if(days<=3)return "exp-danger";if(days<=7)return "exp-warn";return "exp-ok";}
+// 재료 목록 탭 필터: "우선"=소비기한 1개월(30일) 이내(만료 포함), "전체"=모두, 그 외=카테고리
+function matchFilter(item,tab){if(tab==="전체")return true;if(tab==="우선"){const d=daysUntil(item.expiry);return d!==null&&d<=30;}return item.category===tab;}
 function addDays(n){const d=new Date();d.setDate(d.getDate()+n);return d.toISOString().split("T")[0];}
 function makeCalendarLink(item){const d=new Date(item.expiry);const fmt=n=>String(n).padStart(2,"0");const date=`${d.getFullYear()}${fmt(d.getMonth()+1)}${fmt(d.getDate())}`;return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`🧊 소비기한 임박: ${item.name}`)}&dates=${date}/${date}&details=${encodeURIComponent(`재료: ${item.name}`)}`;}
 function makeMailLink(items){const subject=encodeURIComponent(`[냉장고 알림] 소비기한 임박 재료 ${items.length}개`);const body=encodeURIComponent(`소비기한이 임박한 재료들이에요!\n\n`+items.map(i=>`• ${i.name} — ${expLabel(daysUntil(i.expiry))}`).join("\n")+`\n\n빨리 써주세요 🥺`);return `mailto:?subject=${subject}&body=${body}`;}
@@ -308,7 +312,7 @@ export default function FridgeApp() {
   const [toast, setToast] = useState(null);
   const [shelfPopup, setShelfPopup] = useState(null);
   const [aiLoadingIds, setAiLoadingIds] = useState(new Set());
-  const [categoryFilter, setCategoryFilter] = useState(null); // null=전체, "냉장", "냉동"
+  const [categoryFilter, setCategoryFilter] = useState("우선"); // "우선"(소비기한 1개월 이내) | 카테고리 | "전체"
   const [shoppingList, setShoppingList] = useState(() => { try { return JSON.parse(localStorage.getItem("shop_items")||"[]"); } catch { return []; } });
   const [shopCollapsed, setShopCollapsed] = useState(() => localStorage.getItem("shop_collapsed")==="1");
   const [shopForm, setShopForm] = useState({ name:"", qty:"", unit:"개" });
@@ -906,17 +910,18 @@ export default function FridgeApp() {
                 {selected.length>0&&<span className="selected-info">💗 {selected.length}개 선택됨</span>}
               </div>
               <div className="cat-filter">
-                <button className={`cat-filter-btn ${!categoryFilter?"active-all":""}`} onClick={()=>setCategoryFilter(null)}>전체 {totalItems}</button>
-                {CATEGORIES.map(cat=>{
-                  const cnt = items.filter(i=>i.category===cat).length;
-                  return <button key={cat} className={`cat-filter-btn ${categoryFilter===cat?`active-${cat}`:""}`} onClick={()=>setCategoryFilter(p=>p===cat?null:cat)}>{cat} {cnt}</button>;
+                {["우선",...CATEGORIES,"전체"].map(tab=>{
+                  const cnt = items.filter(i=>matchFilter(i,tab)).length;
+                  return <button key={tab} className={`cat-filter-btn ${categoryFilter===tab?`active-${tab}`:""}`} onClick={()=>setCategoryFilter(tab)}>{tab} {cnt}</button>;
                 })}
               </div>
               {items.length===0 ? (
                 <div className="empty"><span className="empty-icon">🥬</span>재료를 추가해봐요!</div>
+              ) : items.filter(i=>matchFilter(i,categoryFilter)).length===0 ? (
+                <div className="empty"><span className="empty-icon">✨</span>{categoryFilter==="우선"?"소비기한이 1개월 이내인 재료가 없어요!":"이 탭에 해당하는 재료가 없어요!"}</div>
               ) : (
                 <div className="item-list">
-                  {items.filter(item=>!categoryFilter||item.category===categoryFilter).sort((a,b)=>{
+                  {items.filter(item=>matchFilter(item,categoryFilter)).sort((a,b)=>{
                     const da=daysUntil(a.expiry), db=daysUntil(b.expiry);
                     if(da===null&&db===null)return 0;
                     if(da===null)return 1;  // 기한 미설정은 맨 뒤
@@ -1121,6 +1126,7 @@ export default function FridgeApp() {
                           <a href={makeCalendarLink(item)} target="_blank" rel="noopener noreferrer" className="btn btn-lav" style={{textDecoration:"none"}}>📅 캘린더</a>
                           <a href={makeMailLink([item])} className="btn btn-sky-out" style={{textDecoration:"none"}}>📧 메일</a>
                           <button className="btn btn-mint" onClick={()=>{setSelected([item.id]);setTab("recipe");}}>🍳 레시피</button>
+                          <button className="btn btn-ghost" onClick={()=>{deleteItem(item.id);showToast(`🗑️ "${item.name}" 삭제했어요`);}}>🗑️ 삭제</button>
                         </div>
                       </div>
                     );
