@@ -360,7 +360,7 @@ function MealPopup({ popup, onChange, onClose, onSave }) {
       <div className="popup-box meal-popup">
         <div className="popup-header">
           <h3>🍽️ {popup.m+1}월 {popup.day}일 ({wd}) 식단</h3>
-          <p>아침 · 점심 · 저녁 메모를 자유롭게 적어보세요</p>
+          <p>아침 · 점심 · 저녁 메모를 자유롭게 적어보세요 · Ctrl+Enter로 저장</p>
         </div>
         {MEALS.map(meal => (
           <div key={meal.key} className="meal-field">
@@ -369,6 +369,7 @@ function MealPopup({ popup, onChange, onClose, onSave }) {
               className="meal-textarea"
               value={popup.text[meal.key]}
               onChange={e => onChange(meal.key, e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); onSave(); } }}
               placeholder={`${meal.label} 메뉴를 적어주세요`}
               maxLength={500}
               autoFocus={popup.focus === meal.key}
