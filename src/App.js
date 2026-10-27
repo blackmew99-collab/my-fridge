@@ -71,7 +71,7 @@ const STYLE = `
   .tab{flex:1;min-width:90px;padding:.55rem .8rem;border-radius:14px;border:none;background:transparent;color:var(--text2);font-family:var(--font);font-size:.8rem;font-weight:700;cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:.35rem;}
   .tab:hover{background:var(--surface2);color:var(--text);}
   .tab.active{background:var(--pink);color:#fff;box-shadow:var(--shadow-sm);}
-  .tab.active.t-recipe{background:var(--mint);}
+  .tab.active.t-meal{background:var(--mint);}
   .tab.active.t-alert{background:var(--peach);}
   .badge{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;background:var(--danger-d);color:#fff;font-size:.6rem;font-weight:800;}
   .tab-badge{display:inline-flex;align-items:center;justify-content:center;min-width:15px;height:15px;border-radius:999px;background:var(--danger-d);color:#fff;font-size:.55rem;font-weight:800;padding:0 3px;margin-left:.2rem;flex-shrink:0;}
@@ -190,7 +190,6 @@ const STYLE = `
   @keyframes slideUp{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
 
   .divider{border:none;border-top:1.5px dashed var(--border);margin:1.1rem 0;}
-  .selected-info{font-size:.74rem;font-weight:600;color:var(--text2);}
   .empty{text-align:center;padding:2.5rem 1rem;color:var(--text3);font-size:.82rem;}
   .empty-icon{font-size:2.5rem;margin-bottom:.6rem;display:block;}
   .hint-bar{font-size:.72rem;color:var(--text2);font-weight:600;margin-top:.9rem;border-top:1.5px dashed var(--border);padding-top:.75rem;}
@@ -208,6 +207,49 @@ const STYLE = `
   .notify-tag{background:#fff;border:1.5px solid var(--peach);color:var(--peach-d);border-radius:999px;font-size:.72rem;font-weight:700;padding:.22rem .55rem .22rem .7rem;display:flex;align-items:center;gap:.3rem;}
   .notify-tag button{background:none;border:none;color:var(--peach-d);cursor:pointer;font-size:.85rem;padding:0;line-height:1;opacity:.7;}
   .notify-tag button:hover{opacity:1;}
+
+  /* ── 식단표 ── */
+  .meal-nav{display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:.9rem;}
+  .meal-nav-title{font-family:var(--font-title);font-size:1.45rem;min-width:8.5rem;text-align:center;color:var(--text);}
+  .meal-nav-btn{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;font-size:.7rem;transition:all .15s;}
+  .meal-nav-btn:hover{background:var(--pink-l);border-color:var(--pink);color:var(--pink-d);}
+  .meal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;}
+  .meal-weekday{text-align:center;font-size:.72rem;font-weight:800;color:var(--text2);padding:.3rem 0;}
+  .meal-weekday.sat,.meal-date.sat{color:var(--sky-d);}
+  .meal-weekday.sun,.meal-date.sun{color:var(--danger-d);}
+  .meal-cell{min-height:110px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:.25rem;display:flex;flex-direction:column;gap:2px;min-width:0;}
+  .meal-cell.empty{background:transparent;border-color:transparent;}
+  .meal-cell.today{border-color:var(--pink);box-shadow:0 0 0 2px var(--pink-l);}
+  .meal-date{font-size:.72rem;font-weight:800;padding:0 .15rem;color:var(--text);}
+  .meal-slot{display:flex;align-items:center;gap:3px;flex:1;width:100%;min-width:0;min-height:24px;border:none;border-radius:6px;padding:2px 4px;cursor:pointer;font-family:var(--font);font-size:.62rem;font-weight:700;text-align:left;color:var(--text);opacity:.6;transition:opacity .15s;}
+  .meal-slot:hover,.meal-slot.filled{opacity:1;}
+  .meal-slot.ms-bf{background:var(--peach-l);}
+  .meal-slot.ms-ln{background:var(--mint-l);}
+  .meal-slot.ms-dn{background:var(--lav-l);}
+  .meal-slot-tag{flex-shrink:0;font-size:.56rem;font-weight:800;}
+  .ms-bf .meal-slot-tag{color:var(--peach-d);}
+  .ms-ln .meal-slot-tag{color:var(--mint-d);}
+  .ms-dn .meal-slot-tag{color:var(--lav-d);}
+  .meal-slot-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+  .meal-legend{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin-top:.8rem;}
+  .meal-legend span{font-size:.7rem;font-weight:700;padding:.2rem .7rem;border-radius:999px;}
+  .meal-legend .ms-bf{background:var(--peach-l);color:var(--peach-d);}
+  .meal-legend .ms-ln{background:var(--mint-l);color:var(--mint-d);}
+  .meal-legend .ms-dn{background:var(--lav-l);color:var(--lav-d);}
+  .meal-popup{max-height:92vh;overflow-y:auto;}
+  .meal-field{margin-bottom:.8rem;}
+  .meal-label{display:inline-block;font-size:.72rem;font-weight:800;padding:.2rem .7rem;border-radius:999px;margin-bottom:.35rem;}
+  .meal-label.ml-bf{background:var(--peach-l);color:var(--peach-d);}
+  .meal-label.ml-ln{background:var(--mint-l);color:var(--mint-d);}
+  .meal-label.ml-dn{background:var(--lav-l);color:var(--lav-d);}
+  .meal-textarea{display:block;width:100%;min-height:78px;resize:vertical;font-family:var(--font);font-size:.85rem;font-weight:600;line-height:1.5;padding:.55rem .7rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:#fff;color:var(--text);}
+  .meal-textarea:focus{border-color:var(--pink);outline:none;box-shadow:0 0 0 3px var(--pink-l);}
+  @media(max-width:520px){
+    .meal-grid{gap:3px;}
+    .meal-cell{min-height:96px;padding:2px;}
+    .meal-slot{padding:2px 3px;font-size:.58rem;}
+    .meal-slot-tag{display:none;}
+  }
 
   /* ── 팝업 공통 ── */
   .popup-overlay{position:fixed;inset:0;background:rgba(74,55,40,.38);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem;backdrop-filter:blur(3px);}
@@ -300,12 +342,57 @@ function ShelfPopup({ popup, onClose, onApply, onSelect }) {
   );
 }
 
+// ── 식단표 ─────────────────────────────────────────────────────────────────
+const MEALS = [
+  { key:"bf", label:"아침", short:"아" },
+  { key:"ln", label:"점심", short:"점" },
+  { key:"dn", label:"저녁", short:"저" },
+];
+const WEEKDAYS_MON = ["월","화","수","목","금","토","일"]; // 월요일 시작
+const WEEKDAYS_SUN = ["일","월","화","수","목","금","토"]; // Date#getDay() 순서
+function dateKey(y,m,d){return `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;} // m: 0~11
+
+function MealPopup({ popup, onChange, onClose, onSave }) {
+  if (!popup) return null;
+  const wd = WEEKDAYS_SUN[new Date(popup.y, popup.m, popup.day).getDay()];
+  return (
+    <div className="popup-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="popup-box meal-popup">
+        <div className="popup-header">
+          <h3>🍽️ {popup.m+1}월 {popup.day}일 ({wd}) 식단</h3>
+          <p>아침 · 점심 · 저녁 메모를 자유롭게 적어보세요</p>
+        </div>
+        {MEALS.map(meal => (
+          <div key={meal.key} className="meal-field">
+            <label className={`meal-label ml-${meal.key}`}>{meal.label}</label>
+            <textarea
+              className="meal-textarea"
+              value={popup.text[meal.key]}
+              onChange={e => onChange(meal.key, e.target.value)}
+              placeholder={`${meal.label} 메뉴를 적어주세요`}
+              maxLength={500}
+              autoFocus={popup.focus === meal.key}
+            />
+          </div>
+        ))}
+        <div className="popup-actions">
+          <button className="btn btn-ghost" onClick={onClose}>취소</button>
+          <button className="btn btn-pink" onClick={onSave}>✓ 저장</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── 메인 앱 ────────────────────────────────────────────────────────────────
 export default function FridgeApp() {
   const [items, setItems] = useState(() => { try { return JSON.parse(localStorage.getItem("fridge_items")||"[]"); } catch { return []; } });
   const [tab, setTab] = useState("fridge");
   const [form, setForm] = useState({ name:"", qty:"", unit:"g", category:"냉장", expiry:"" });
-  const [selected, setSelected] = useState([]);
+  const [mealPlan, setMealPlan] = useState(() => { try { return JSON.parse(localStorage.getItem("meal_plan")||"{}") || {}; } catch { return {}; } });
+  const currentMealRef = useRef(mealPlan);
+  const [mealMonth, setMealMonth] = useState(() => { const n=new Date(); return { y:n.getFullYear(), m:n.getMonth() }; });
+  const [mealPopup, setMealPopup] = useState(null); // {y,m,day,focus,text:{bf,ln,dn}}
   const [editId, setEditId] = useState(null); // 수정 중인 재료 id
   const [editForm, setEditForm] = useState({ name:"", qty:"", unit:"g", category:"냉장", expiry:"" });
 
@@ -364,6 +451,8 @@ export default function FridgeApp() {
   // shoppingList ref 최신화 + localStorage 동기화
   useEffect(() => { currentShopRef.current = shoppingList; }, [shoppingList]);
   useEffect(() => { localStorage.setItem("shop_items", JSON.stringify(shoppingList)); }, [shoppingList]);
+  useEffect(() => { currentMealRef.current = mealPlan; }, [mealPlan]);
+  useEffect(() => { localStorage.setItem("meal_plan", JSON.stringify(mealPlan)); }, [mealPlan]);
 
   // shoppingList Firebase 리스너
   useEffect(() => {
@@ -379,6 +468,24 @@ export default function FridgeApp() {
       } else {
         // 그 외에는 Firebase가 진실의 원천 — null이면 '비어있음'으로 그대로 반영 (삭제 동기화)
         setShoppingList(data ? (Array.isArray(data) ? data : Object.values(data)) : []);
+      }
+      isFirst = false;
+    });
+    return unsubscribe;
+  }, [roomCode, isShared]);
+
+  // mealPlan(식단표) Firebase 리스너 — 쇼핑 목록과 동일한 시딩/삭제 동기화 규칙
+  useEffect(() => {
+    if (!isShared || !db) return;
+    let isFirst = true;
+    const mealPath = ref(db, `fridges/${roomCode}/mealPlan`);
+    const unsubscribe = onValue(mealPath, (snapshot) => {
+      const data = snapshot.val();
+      if (isFirst && data === null && seedOnJoinRef.current) {
+        const cur = currentMealRef.current;
+        if (Object.keys(cur).length > 0) set(mealPath, cur);
+      } else {
+        setMealPlan(data && typeof data === "object" ? data : {});
       }
       isFirst = false;
     });
@@ -612,7 +719,7 @@ export default function FridgeApp() {
     showToast(`🥬 "${newItem.name}" 추가됐어요!`);
   };
 
-  const deleteItem = id => { persistItems(currentItemsRef.current.filter(i=>i.id!==id)); setSelected(prev=>prev.filter(s=>s!==id)); };
+  const deleteItem = id => persistItems(currentItemsRef.current.filter(i=>i.id!==id));
 
   // ── 클립보드에서 붙여넣기 ────────────────────────────────────────────────────
   const parseClipboardLine = (line) => {
@@ -694,18 +801,34 @@ export default function FridgeApp() {
     persistShop(currentShopRef.current.filter(i => !i.done));
     showToast(`🧊 ${checked.length}개 재료를 냉장고에 추가했어요!`);
   };
-  const toggleSelect = id => setSelected(prev=>prev.includes(id)?prev.filter(s=>s!==id):[...prev,id]);
 
-  const searchRecipeOn = (engine) => {
-    const ingredients = selected.length>0 ? items.filter(i=>selected.includes(i.id)).map(i=>i.name) : items.map(i=>i.name);
-    if (!ingredients.length) { showToast("❗ 재료를 먼저 추가해주세요"); return; }
-    const query = encodeURIComponent(ingredients.join(" ") + " 요리");
-    const urls = {
-      google:  `https://www.google.com/search?q=${query}`,
-      youtube: `https://www.youtube.com/results?search_query=${query}`,
-      naver:   `https://search.naver.com/search.naver?query=${query}`,
-    };
-    window.open(urls[engine], "_blank");
+  // ── 식단표 함수 ────────────────────────────────────────────────────────────
+  const persistMeal = useCallback((plan) => {
+    setMealPlan(plan);
+    if (isSharedRef.current) set(ref(db, `fridges/${roomCodeRef.current}/mealPlan`), Object.keys(plan).length ? plan : null);
+  }, []);
+
+  const moveMealMonth = delta => setMealMonth(({ y, m }) => {
+    const d = new Date(y, m + delta, 1);
+    return { y: d.getFullYear(), m: d.getMonth() };
+  });
+  const goMealToday = () => { const n = new Date(); setMealMonth({ y:n.getFullYear(), m:n.getMonth() }); };
+
+  const openMealPopup = (day, focus) => {
+    const entry = currentMealRef.current[dateKey(mealMonth.y, mealMonth.m, day)] || {};
+    setMealPopup({ y:mealMonth.y, m:mealMonth.m, day, focus, text:{ bf:entry.bf||"", ln:entry.ln||"", dn:entry.dn||"" } });
+  };
+
+  const saveMealPopup = () => {
+    const { y, m, day, text } = mealPopup;
+    const entry = {};
+    MEALS.forEach(({ key }) => { const v = (text[key]||"").trim(); if (v) entry[key] = v; });
+    const next = { ...currentMealRef.current };
+    const k = dateKey(y, m, day);
+    if (Object.keys(entry).length) next[k] = entry; else delete next[k];
+    persistMeal(next);
+    setMealPopup(null);
+    showToast("🍽️ 식단을 저장했어요!");
   };
 
   const totalItems = items.length;
@@ -713,7 +836,6 @@ export default function FridgeApp() {
   const expired = items.filter(i=>{ const d=daysUntil(i.expiry); return d!==null&&d<0; }).length;
   const noExpiry = items.filter(i=>!i.expiry).length;
   const alertItems = items.filter(i=>{ const d=daysUntil(i.expiry); return d!==null&&d<=7; });
-  // selectedItems는 레시피 탭에서 selected + items 직접 사용으로 대체됨
 
   return (
     <>
@@ -762,7 +884,7 @@ export default function FridgeApp() {
           <div className="header-clickable" onClick={() => setTab("fridge")} role="button" tabIndex={0} onKeyDown={e => e.key==="Enter" && setTab("fridge")}>
             <span className="header-deco">🧊</span>
             <h1 className="header-title">My <span>Fridge</span></h1>
-            <p className="header-sub">재료 관리 · 레시피 추천 · 소비기한 알림</p>
+            <p className="header-sub">재료 관리 · 식단표 · 소비기한 알림</p>
           </div>
           <div className="stat-pills">
             <span className="stat-pill pill-total">🥕 전체 {totalItems}개</span>
@@ -797,7 +919,7 @@ export default function FridgeApp() {
 
         <div className="tabs">
           <button className={`tab ${tab==="fridge"?"active":""}`} onClick={()=>setTab("fridge")}>🥬 냉장고</button>
-          <button className={`tab t-recipe ${tab==="recipe"?"active":""}`} onClick={()=>setTab("recipe")}>🍳 레시피</button>
+          <button className={`tab t-meal ${tab==="meal"?"active":""}`} onClick={()=>setTab("meal")}>📅 식단표</button>
           <button className={`tab t-alert ${tab==="alert"?"active":""}`} onClick={()=>setTab("alert")}>
             🔔 소비기한{alertItems.length>0&&<span className="tab-badge">{alertItems.length}</span>}
           </button>
@@ -907,7 +1029,6 @@ export default function FridgeApp() {
             <div className="card">
               <div className="card-header">
                 <h2 className="card-title">🧺 냉장고 속 재료 ({totalItems})</h2>
-                {selected.length>0&&<span className="selected-info">💗 {selected.length}개 선택됨</span>}
               </div>
               <div className="cat-filter">
                 {["우선",...CATEGORIES,"전체"].map(tab=>{
@@ -929,7 +1050,6 @@ export default function FridgeApp() {
                     return da-db;           // 짧은 순
                   }).map(item=>{
                     const days=daysUntil(item.expiry);
-                    const isSelected=selected.includes(item.id);
                     const isAiLoading=aiLoadingIds.has(item.id);
 
                     // ── 수정 모드 ──
@@ -958,8 +1078,7 @@ export default function FridgeApp() {
                     }
 
                     return (
-                      <div key={item.id} className={`item-row ${expClass(days)}`} style={isSelected?{outline:"2px solid var(--pink)",outlineOffset:"1px"}:{}}>
-                        <input type="checkbox" className="item-check" checked={isSelected} onChange={()=>toggleSelect(item.id)} />
+                      <div key={item.id} className={`item-row ${expClass(days)}`}>
                         <span className="item-name">{item.name}</span>
                         {item.qty&&<span className="item-qty">{item.qty}{item.unit}</span>}
                         <span className="item-cat" style={{background:CAT_COLORS[item.category]+"33",color:CAT_TEXT[item.category],border:`1px solid ${CAT_COLORS[item.category]}`}}>{item.category}</span>
@@ -989,83 +1108,62 @@ export default function FridgeApp() {
           </>
         )}
 
-        {/* ── 레시피 탭 ── */}
-        {tab==="recipe" && (
+        {/* ── 식단표 탭 ── */}
+        {tab==="meal" && (
           <div className="card">
             <div className="card-header">
-              <h2 className="card-title">🍳 레시피 검색</h2>
-              {items.length>0 && (
-                <button className="btn btn-ghost" style={{fontSize:".7rem",padding:".25rem .65rem"}}
-                  onClick={()=>{
-                    if(selected.length===items.length) setSelected([]);
-                    else setSelected(items.map(i=>i.id));
-                  }}>
-                  {selected.length===items.length ? "✕ 전체 해제" : "✔ 전체 선택"}
-                </button>
-              )}
+              <h2 className="card-title">📅 월별 식단표</h2>
+              <button className="btn btn-ghost" style={{fontSize:".7rem",padding:".25rem .65rem"}} onClick={goMealToday}>오늘</button>
             </div>
 
-            {/* 재료 선택 리스트 */}
-            {items.length===0 ? (
-              <div className="empty" style={{padding:"1rem 0"}}>
-                <span className="empty-icon">🥬</span>냉장고 탭에서 재료를 추가해봐요!
-              </div>
-            ) : (
-              <>
-                <p style={{fontSize:".72rem",color:"var(--text2)",fontWeight:700,marginBottom:".5rem"}}>
-                  재료 선택
-                  {selected.length>0
-                    ? <span style={{color:"var(--mint-d)",marginLeft:".4rem"}}>✔ {selected.length}개 선택됨</span>
-                    : <span style={{color:"var(--text3)",marginLeft:".4rem",fontWeight:500}}>— 선택 없으면 전체 재료로 검색</span>
-                  }
-                </p>
-                <div className="item-list" style={{maxHeight:"280px",overflowY:"auto"}}>
-                  {[...items].sort((a,b)=>{
-                    const da=daysUntil(a.expiry), db=daysUntil(b.expiry);
-                    if(da===null&&db===null)return 0;
-                    if(da===null)return 1;
-                    if(db===null)return -1;
-                    return da-db;
-                  }).map(item=>{
-                    const days=daysUntil(item.expiry);
-                    const isSel=selected.includes(item.id);
-                    return (
-                      <div key={item.id} className={`item-row ${expClass(days)}`}
-                        style={{cursor:"pointer",...(isSel?{outline:"2px solid var(--mint)",outlineOffset:"1px",background:"var(--mint-l, #eafaf3)"}:{})}}
-                        onClick={()=>toggleSelect(item.id)}>
-                        <input type="checkbox" className="item-check" checked={isSel} onChange={()=>toggleSelect(item.id)} onClick={e=>e.stopPropagation()} />
-                        <span className="item-name">{item.name}</span>
-                        {item.qty&&<span className="item-qty">{item.qty}{item.unit}</span>}
-                        <span className="item-cat" style={{background:CAT_COLORS[item.category]+"33",color:CAT_TEXT[item.category],border:`1px solid ${CAT_COLORS[item.category]}`}}>{item.category}</span>
-                        <span className="item-right">
-                          {item.expiry
-                            ? <span className={`item-exp ${expTextClass(days)}`}>{expLabel(days)}</span>
-                            : <span className="item-exp exp-none">기한 미설정</span>
-                          }
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-
-            <hr className="divider" style={{margin:".9rem 0"}}/>
-
-            {/* 검색 버튼 */}
-            <div style={{display:"flex",gap:".5rem",flexWrap:"wrap"}}>
-              <button className="btn btn-mint" onClick={()=>searchRecipeOn("google")} disabled={items.length===0} style={{flex:1,justifyContent:"center"}}>
-                🔍 구글
-              </button>
-              <button className="btn btn-peach" onClick={()=>searchRecipeOn("youtube")} disabled={items.length===0} style={{flex:1,justifyContent:"center"}}>
-                ▶ 유튜브
-              </button>
-              <button className="btn btn-lav" onClick={()=>searchRecipeOn("naver")} disabled={items.length===0} style={{flex:1,justifyContent:"center"}}>
-                🟢 네이버
-              </button>
+            <div className="meal-nav">
+              <button className="meal-nav-btn" onClick={()=>moveMealMonth(-1)} aria-label="이전 달">◀</button>
+              <span className="meal-nav-title">{mealMonth.y}년 {mealMonth.m+1}월</span>
+              <button className="meal-nav-btn" onClick={()=>moveMealMonth(1)} aria-label="다음 달">▶</button>
             </div>
-            <p style={{fontSize:".7rem",color:"var(--text3)",fontWeight:600,marginTop:".65rem"}}>
-              선택한 재료 + "요리" 키워드로 새 창에서 검색해요 · {selected.length>0?`${selected.length}개 선택됨`:`전체 ${items.length}개 사용`}
+
+            <div className="meal-grid">
+              {WEEKDAYS_MON.map((w,i)=>(
+                <div key={w} className={`meal-weekday${i===5?" sat":i===6?" sun":""}`}>{w}</div>
+              ))}
+              {(()=>{
+                const { y, m } = mealMonth;
+                const lead = (new Date(y, m, 1).getDay() + 6) % 7; // 월요일=0
+                const dim = new Date(y, m + 1, 0).getDate();
+                const now = new Date();
+                const todayKey = dateKey(now.getFullYear(), now.getMonth(), now.getDate());
+                const cells = [];
+                for (let i = 0; i < lead; i++) cells.push(<div key={`e${i}`} className="meal-cell empty" />);
+                for (let day = 1; day <= dim; day++) {
+                  const key = dateKey(y, m, day);
+                  const entry = mealPlan[key] || {};
+                  const col = (lead + day - 1) % 7;
+                  cells.push(
+                    <div key={key} className={`meal-cell${key===todayKey?" today":""}`}>
+                      <div className={`meal-date${col===5?" sat":col===6?" sun":""}`}>{day}</div>
+                      {MEALS.map(meal=>(
+                        <button
+                          key={meal.key}
+                          className={`meal-slot ms-${meal.key}${entry[meal.key]?" filled":""}`}
+                          onClick={()=>openMealPopup(day, meal.key)}
+                          title={`${m+1}월 ${day}일 ${meal.label}`}
+                        >
+                          <span className="meal-slot-tag">{meal.short}</span>
+                          <span className="meal-slot-text">{entry[meal.key] || ""}</span>
+                        </button>
+                      ))}
+                    </div>
+                  );
+                }
+                return cells;
+              })()}
+            </div>
+
+            <div className="meal-legend">
+              {MEALS.map(meal=><span key={meal.key} className={`ms-${meal.key}`}>{meal.label}</span>)}
+            </div>
+            <p style={{fontSize:".7rem",color:"var(--text3)",fontWeight:600,marginTop:".65rem",textAlign:"center"}}>
+              칸을 누르면 메모 창이 열려요 · 공유 방에 연결하면 모든 기기에 함께 저장돼요
             </p>
           </div>
         )}
@@ -1125,7 +1223,6 @@ export default function FridgeApp() {
                         <div className="alert-actions">
                           <a href={makeCalendarLink(item)} target="_blank" rel="noopener noreferrer" className="btn btn-lav" style={{textDecoration:"none"}}>📅 캘린더</a>
                           <a href={makeMailLink([item])} className="btn btn-sky-out" style={{textDecoration:"none"}}>📧 메일</a>
-                          <button className="btn btn-mint" onClick={()=>{setSelected([item.id]);setTab("recipe");}}>🍳 레시피</button>
                           <button className="btn btn-ghost" onClick={()=>{deleteItem(item.id);showToast(`🗑️ "${item.name}" 삭제했어요`);}}>🗑️ 삭제</button>
                         </div>
                       </div>
@@ -1139,6 +1236,7 @@ export default function FridgeApp() {
       </div>
 
       <ShelfPopup popup={shelfPopup} onClose={()=>setShelfPopup(null)} onApply={applyShelfLife} onSelect={i=>setShelfPopup(prev=>prev?{...prev,selectedOption:i}:null)} />
+      <MealPopup popup={mealPopup} onChange={(k,v)=>setMealPopup(p=>p&&({...p,text:{...p.text,[k]:v}}))} onClose={()=>setMealPopup(null)} onSave={saveMealPopup} />
       {toast&&<div className="toast">{toast}</div>}
     </>
   );
