@@ -22,12 +22,12 @@ my-fridge-deploy/
 
 ### 1. 이 폴더 내용을 기존 my-fridge 폴더에 복사
 
-탐색기에서 이 폴더의 모든 파일을 `C:\Users\black\Desktop\my-fridge` 에 붙여넣기
+탐색기에서 이 폴더의 모든 파일을 `C:\Users\black\Dropbox\만식이 프로젝트\my-fridge` 에 붙여넣기
 (덮어쓰기 허용)
 
 ### 2. PowerShell에서 실행
 ```powershell
-cd C:\Users\black\Desktop\my-fridge
+cd "C:\Users\black\Dropbox\만식이 프로젝트\my-fridge"
 npm install
 git add .
 git commit -m "아이콘 및 설정 업데이트"
