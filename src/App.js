@@ -141,6 +141,7 @@ const STYLE = `
   .item-qty{font-size:.72rem;font-weight:600;color:var(--text2);background:var(--surface);border-radius:999px;padding:.18rem .6rem;border:1px solid var(--border);}
   .item-cat{font-size:.68rem;font-weight:700;padding:.18rem .55rem;border-radius:999px;}
   .item-right{display:flex;align-items:center;gap:.5rem;margin-left:auto;flex-wrap:wrap;justify-content:flex-end;}
+  .item-actions{display:flex;align-items:center;flex-shrink:0;}
   .item-exp{font-size:.72rem;font-weight:600;}
   .exp-ok{color:var(--mint-d);} .exp-warn{color:var(--warn-d);} .exp-danger{color:var(--danger-d);} .exp-none{color:var(--text3);font-style:italic;}
   .item-del{background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:1rem;padding:.2rem .3rem;border-radius:6px;transition:all .15s;flex-shrink:0;}
@@ -149,6 +150,16 @@ const STYLE = `
   .item-del:hover{color:var(--danger-d);background:var(--danger-l);}
   .item-edit-btn{background:transparent;border:none;cursor:pointer;font-size:.95rem;padding:.2rem .3rem;border-radius:6px;transition:all .15s;flex-shrink:0;opacity:.7;}
   .item-edit-btn:hover{opacity:1;background:var(--surface2);}
+  /* 모바일: 재료 행(이름·분류·기한·✏️·✕)이 한 줄에 들어가도록 간격 축소, 연도 생략 */
+  @media(max-width:520px){
+    .item-row{gap:.35rem;padding:.6rem .65rem;}
+    .item-name{min-width:56px;}
+    .item-right{gap:.35rem;}
+    .exp-year{display:none;}
+    .item-qty{padding:.12rem .45rem;font-size:.68rem;}
+    .item-cat{padding:.14rem .45rem;}
+    .item-edit-btn,.item-del{padding:.2rem;}
+  }
   /* 재료 수정 모드 */
   .item-row.item-edit{background:var(--pink-l);border:1.5px solid var(--pink);align-items:stretch;}
   .item-edit-form{display:flex;flex-wrap:wrap;gap:.45rem;width:100%;align-items:center;}
@@ -1100,7 +1111,7 @@ export default function FridgeApp() {
                         <span className="item-cat" style={{background:CAT_COLORS[item.category]+"33",color:CAT_TEXT[item.category],border:`1px solid ${CAT_COLORS[item.category]}`}}>{item.category}</span>
                         <span className="item-right">
                           {item.expiry ? (
-                            <span className={`item-exp ${expTextClass(days)}`}>{item.expiry} · {expLabel(days)}</span>
+                            <span className={`item-exp ${expTextClass(days)}`}><span className="exp-year">{item.expiry.slice(0,5)}</span>{item.expiry.slice(5)} · {expLabel(days)}</span>
                           ) : (
                             <>
                               <span className="item-exp exp-none">기한 미설정</span>
@@ -1109,9 +1120,11 @@ export default function FridgeApp() {
                               </button>
                             </>
                           )}
+                          <span className="item-actions">
+                            <button className="item-edit-btn" onClick={()=>startEdit(item)} title="수정">✏️</button>
+                            <button className="item-del" onClick={()=>deleteItem(item.id)}>✕</button>
+                          </span>
                         </span>
-                        <button className="item-edit-btn" onClick={()=>startEdit(item)} title="수정">✏️</button>
-                        <button className="item-del" onClick={()=>deleteItem(item.id)}>✕</button>
                       </div>
                     );
                   })}
