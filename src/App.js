@@ -455,6 +455,21 @@ export default function FridgeApp() {
   useEffect(() => { currentMealRef.current = mealPlan; }, [mealPlan]);
   useEffect(() => { localStorage.setItem("meal_plan", JSON.stringify(mealPlan)); }, [mealPlan]);
 
+  // 식단표 단축키: n=다음 달, p=이전 달 (입력 중이거나 팝업이 열려 있으면 무시, e.code라 한글 입력 상태에서도 동작)
+  useEffect(() => {
+    if (tab !== "meal" || mealPopup) return;
+    const onKey = e => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const el = e.target, tag = el && el.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (el && el.isContentEditable)) return;
+      const delta = e.code === "KeyN" ? 1 : e.code === "KeyP" ? -1 : 0;
+      if (!delta) return;
+      setMealMonth(({ y, m }) => { const d = new Date(y, m + delta, 1); return { y:d.getFullYear(), m:d.getMonth() }; });
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [tab, mealPopup]);
+
   // shoppingList Firebase 리스너
   useEffect(() => {
     if (!isShared || !db) return;
@@ -1164,7 +1179,7 @@ export default function FridgeApp() {
               {MEALS.map(meal=><span key={meal.key} className={`ms-${meal.key}`}>{meal.label}</span>)}
             </div>
             <p style={{fontSize:".7rem",color:"var(--text3)",fontWeight:600,marginTop:".65rem",textAlign:"center"}}>
-              칸을 누르면 메모 창이 열려요 · 공유 방에 연결하면 모든 기기에 함께 저장돼요
+              칸을 누르면 메모 창이 열려요 · N 다음 달 / P 이전 달 · 공유 방에 연결하면 모든 기기에 함께 저장돼요
             </p>
           </div>
         )}
