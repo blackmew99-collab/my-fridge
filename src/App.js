@@ -466,6 +466,21 @@ export default function FridgeApp() {
   useEffect(() => { currentMealRef.current = mealPlan; }, [mealPlan]);
   useEffect(() => { localStorage.setItem("meal_plan", JSON.stringify(mealPlan)); }, [mealPlan]);
 
+  // 메뉴 단축키: Alt+1=냉장고, Alt+2=식단표, Alt+3=소비기한 (팝업이 열려 있으면 무시, e.code라 한글 입력 상태에서도 동작)
+  useEffect(() => {
+    if (mealPopup || shelfPopup) return;
+    const TABS = { Digit1:"fridge", Digit2:"meal", Digit3:"alert", Numpad1:"fridge", Numpad2:"meal", Numpad3:"alert" };
+    const onKey = e => {
+      if (!e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+      const target = TABS[e.code];
+      if (!target) return;
+      e.preventDefault();
+      setTab(target);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mealPopup, shelfPopup]);
+
   // 식단표 단축키: n=다음 달, p=이전 달 (입력 중이거나 팝업이 열려 있으면 무시, e.code라 한글 입력 상태에서도 동작)
   useEffect(() => {
     if (tab !== "meal" || mealPopup) return;
@@ -945,9 +960,9 @@ export default function FridgeApp() {
         </header>
 
         <div className="tabs">
-          <button className={`tab ${tab==="fridge"?"active":""}`} onClick={()=>setTab("fridge")}>🥬 냉장고</button>
-          <button className={`tab t-meal ${tab==="meal"?"active":""}`} onClick={()=>setTab("meal")}>📅 식단표</button>
-          <button className={`tab t-alert ${tab==="alert"?"active":""}`} onClick={()=>setTab("alert")}>
+          <button className={`tab ${tab==="fridge"?"active":""}`} title="Alt+1" onClick={()=>setTab("fridge")}>🥬 냉장고</button>
+          <button className={`tab t-meal ${tab==="meal"?"active":""}`} title="Alt+2" onClick={()=>setTab("meal")}>📅 식단표</button>
+          <button className={`tab t-alert ${tab==="alert"?"active":""}`} title="Alt+3" onClick={()=>setTab("alert")}>
             🔔 소비기한{alertItems.length>0&&<span className="tab-badge">{alertItems.length}</span>}
           </button>
         </div>
